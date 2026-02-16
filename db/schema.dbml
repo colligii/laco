@@ -1,0 +1,129 @@
+table main {
+    // see in future how we gonna create IG stories filter
+    filter_name varchar(255)
+    filter_photo_url varchar(255)
+    filter_points varchar(255)
+}
+
+table user {
+    id uuid pk
+    email varchar(255) 
+    password varchar(255) [null]
+    username varchar(255)
+    provider Provider
+    avatar_id uuid [ref: > file.id]
+    role_id uuid [ref:> role.id]
+}
+
+table role {
+    id uuid pk
+    code varchar(50)
+}
+
+table role_permission {
+    role_id uuid [ref: > role.id]
+    permission_id uuid [ref: > permission.id]
+
+    Indexes {
+        (role_id, permission_id)
+    }
+}
+
+table permission {
+    id uuid pk
+    code varchar(50)
+}
+
+table otp_login {
+    id uuid pk
+    code char(6)
+    expires_in datetime
+    validated bool [default: false]
+    user_id uuid [ref: > user.id]
+}
+
+table file {
+    id uuid pk
+    path text
+}
+
+table schedule {
+    id uuid pk
+    name varchar(50)
+    background_id uuid [ref: > file.id]
+}
+
+table event {
+    id uuid pk
+    name varchar(50)
+    start_date datetime
+    end_date datetime
+    background_id uuid [ref: > file.id]
+    schedule_id uuid [ref: > schedule.id]
+}
+
+table stories {
+    id uuid pk
+    file_id uuid [ref: > file.id]
+    user_id uuid [ref: > user.id]
+    created_at datetime
+}
+
+table story_reaction {
+    story_id uuid [ref: > stories.id] 
+    user_id uuid [ref: > user.id]
+    reaction Reaction    
+
+    Indexes {
+        (story_id, user_id)
+    }
+}
+
+table post {
+    id uuid pk
+    url text
+    width float
+    height float
+    created_at datetime
+    user_id uuid [ref: > user.id]
+}
+
+table post_comments {
+    id uuid pk
+    comment varchar(255)
+    created_at datetime
+
+    user_id uuid [ref: > user.id]
+    post_id uuid [ref: > post.id]
+}
+
+table post_reaction {
+    post_id uuid [ref: > post.id] 
+    user_id uuid [ref: > user.id]
+    reaction Reaction    
+
+    Indexes {
+        (post_id, user_id)
+    }
+}
+
+table chat {
+    id uuid pk
+    message text
+    created_at datetime
+
+    user_id uuid [ref: > user.id]
+}
+
+enum Reaction {
+    Like
+    Smile
+    Clap
+    Heart
+}
+
+enum Provider {
+    Local
+    Google
+    Apple
+}
