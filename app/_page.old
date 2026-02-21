@@ -1,0 +1,68 @@
+import React from 'react';
+import Button from './components/button'
+import { Mail, Apple } from 'lucide-react'; // Assumindo o uso de lucide-react para os ícones
+import AppleSvg from './img/svg/apple';
+
+const LoginPage = () => {
+  const scheduleName = "Casamento de [Nome]"; // Exemplo para a variável ${scheduleName}
+
+  return (
+    <div className="flex h-screen flex-col items-center justify-between p-8 text-white font-sans">
+      
+      <div className="flex flex-col items-center mt-12">    
+        <h1 className="text-6xl font-light mb-6 tracking-tight">
+          Laços
+        </h1>
+
+        <p className="text-center text-lg leading-relaxed max-w-xs opacity-90">
+          Entre em <span className="font-semibold">{scheduleName}</span> e registre suas memórias na caixa do tempo.
+        </p>
+      </div>
+
+      <div className="w-full max-w-sm space-y-4">
+        
+        <Button
+          iconComponent={
+            <Mail size={25}></Mail>
+          }
+          text="Faça login com Email"
+        ></Button>
+        <Button
+          color="black"
+          background="white"
+          iconComponent={
+            <img 
+              src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" 
+              alt="Google" 
+              className="w-7 h-7"
+            />
+          }
+          text="Faça login com Google"
+        >
+        </Button>
+        <Button
+          color="white"
+          background="black"
+          borderColor="black"
+          iconComponent={
+            <AppleSvg width="25px" height="25px"/>
+          }
+          text="Faça login com Apple"
+        >
+        </Button>
+
+        {/* Help Link */}
+        <div className="flex items-center justify-center gap-2 pt-6">
+          <div className="w-6 h-6 flex items-center justify-center bg-transparent border-2 border-white rounded-md text-sm font-bold">
+            ?
+          </div>
+          <p className="text-sm">
+            Ficou com dúvida! <a href="#" className="text-blue-500 hover:underline">Clique Aqui</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
