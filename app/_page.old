@@ -21,35 +21,7 @@ const LoginPage = () => {
 
       <div className="w-full max-w-sm space-y-4">
         
-        <Button
-          iconComponent={
-            <Mail size={25}></Mail>
-          }
-          text="Faça login com Email"
-        ></Button>
-        <Button
-          color="black"
-          background="white"
-          iconComponent={
-            <img 
-              src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" 
-              alt="Google" 
-              className="w-7 h-7"
-            />
-          }
-          text="Faça login com Google"
-        >
-        </Button>
-        <Button
-          color="white"
-          background="black"
-          borderColor="black"
-          iconComponent={
-            <AppleSvg width="25px" height="25px"/>
-          }
-          text="Faça login com Apple"
-        >
-        </Button>
+        
 
         {/* Help Link */}
         <div className="flex items-center justify-center gap-2 pt-6">
