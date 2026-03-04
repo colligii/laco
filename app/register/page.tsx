@@ -3,7 +3,7 @@ import Button from '../components/button'
 import ButtonIcon from '../components/button-icon'
 import Header from '../components/header';
 import AppleSvg from '../img/svg/apple';
-import LoginForm from './login-form';
+import RegisterForm from './register-form';
 
 const Login = () => {
     const scheduleName = "Casamento de [Nome]"; // Exemplo para a variável ${scheduleName}
@@ -16,10 +16,10 @@ const Login = () => {
 
                 <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold mb-6 tracking-tight">
-                        Login
+                        Registar
                     </h1>
                     <div>
-                        <LoginForm/>
+                        <RegisterForm/>
                     </div>
                 </div>
 
@@ -35,7 +35,7 @@ const Login = () => {
                                 className="w-7 h-7"
                             />
                         }
-                        text="Faça login com Google"
+                        text="Registre-se com Google"
                     >
                     </ButtonIcon>
                     <ButtonIcon
@@ -45,7 +45,7 @@ const Login = () => {
                         iconComponent={
                             <AppleSvg width="25px" height="25px" />
                         }
-                        text="Faça login com Apple"
+                        text="Registre-se com Apple"
                     >
                     </ButtonIcon>
 
