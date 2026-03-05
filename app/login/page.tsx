@@ -10,7 +10,7 @@ const Login = () => {
 
 
     return (
-        <>
+        <div className="h-screen flex flex-col items-center">
             <Header disableIcon={true} />
             <div className="flex h-screen flex-col items-center justify-between text-white font-sans">
 
@@ -22,9 +22,9 @@ const Login = () => {
                         <LoginForm/>
                     </div>
                 </div>
+            </div>
 
-
-                <div className="w-full max-w-sm space-y-4">
+            <div className="w-full max-w-sm space-y-4 pb-4">
                     <ButtonIcon
                         color="black"
                         background="white"
@@ -58,8 +58,7 @@ const Login = () => {
                         </p>
                     </div>
                 </div>
-            </div>
-        </>
+        </div>
     );
 };
 
