@@ -3,12 +3,12 @@ import { ReactNode } from "react"
 import { createClient } from '@supabase/supabase-js';
 import ButtonIcon from "./button-icon";
 
-export default function GoogleLoginButton({ ...props }: GoogleLoginButton) {
+export default function AppleLoginButton({ ...props }: AppleLoginButton) {
     
     const handleLoginWithGoogle = async () => {
         const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
         const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
+            provider: 'apple',
             options: {
                 redirectTo: window.location.origin + '/otp_code',
             },
@@ -23,7 +23,7 @@ export default function GoogleLoginButton({ ...props }: GoogleLoginButton) {
     )
 }
 
-export interface GoogleLoginButton {
+export interface AppleLoginButton {
     iconComponent: ReactNode
     text: string
     background?: string
