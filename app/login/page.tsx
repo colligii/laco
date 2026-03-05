@@ -11,7 +11,7 @@ const Login = () => {
 
     return (
         <div className="h-screen flex flex-col items-center">
-            <Header disableIcon={true} />
+            <Header disableIcon={true} href="/"/>
             <div className="flex h-screen flex-col items-center justify-between text-white font-sans">
 
                 <div className="flex flex-col items-center">

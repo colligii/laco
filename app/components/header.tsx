@@ -1,19 +1,27 @@
 import icon from '@/app/img/png/icon.jpeg'
 import Image from 'next/image'
 import Back from '../img/svg/back';
+import Link from 'next/link';
 
-export default function Header({ disableIcon, disableBackBtn }: Header) {
+export default function Header({ disableIcon, disableBackBtn, href }: Header) {
     return (
         <div className="relative w-full absolute h-30 gradient flex items-end justify-center pb-4">
             {
-                !disableIcon && 
+                !disableIcon &&
                 <Image src={icon} alt="icon" width={80} height={80} className="rounded-[50%]" />
             }
             {
-                !disableBackBtn && 
+                !disableBackBtn &&
                 <div className="absolute top-10 left-4 bg-white p-2 rounded-full">
-                    <Back squareSize={18}/>
-                </div>    
+                    {
+                        typeof href === 'string' ?
+                            <Link href={href!}>
+                                <Back squareSize={18} />
+                            </Link>
+                            :
+                            <Back squareSize={18} />
+                    }
+                </div>
             }
         </div>
     )
@@ -21,5 +29,6 @@ export default function Header({ disableIcon, disableBackBtn }: Header) {
 
 export interface Header {
     disableIcon?: boolean;
+    href?: string;
     disableBackBtn?: boolean;
 }
