@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
     const requestUrl = new URL(request.url);
-    const searchParamsAsString = requestUrl.searchParams.toString();
-    const accessToken = requestUrl.searchParams.get('access_token');
-    const url = `/complete-profile?${searchParamsAsString}`;
+
+    const searchParams = requestUrl.searchParams;
+
+    searchParams.append('type', 'external')
+
+    const searchParamsAsString = searchParams.toString();
+    const accessToken = searchParams.get('access_token');
+    const url = `/auth/finish?${searchParamsAsString}`;
 
     if(accessToken) {
         return NextResponse.redirect(new URL(url, request.url));

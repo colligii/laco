@@ -1,40 +1,35 @@
-import { createServerClient } from '@supabase/auth-helpers-nextjs'
 import { NextRequest, NextResponse } from "next/server";
 
 
 export async function middleware(request: NextRequest) {
-    const response = NextResponse.next();
-    const requestUrl = new URL(request.url);
-    const accessToken = requestUrl.searchParams.get('access_token');
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: request.cookies
-        }
-    );
+    try {
+        const url = new URL(request.url);
+        const searchParams = url.searchParams;
 
-    if(!accessToken)
+
+        const fetchUser = await fetch(`${url.origin}/auth/check/complete`, {
+            headers: {
+                authToken: searchParams.get('authToken')!
+            },
+            method: 'POST'
+        })
+
+        const fetchUserJson = await fetchUser.json()
+
+        if(fetchUser.status !== 200)
+            throw new Error('Error when trying to validate')
+
+        const requestHeaders = new Headers(request.headers);
+        
+        requestHeaders.set('x-first-name', fetchUserJson.firstName ?? '');
+        requestHeaders.set('x-last-name', fetchUserJson.lastName ?? '');
+
+        return NextResponse.next({
+            request: { headers: requestHeaders }
+        });
+    } catch(e) {
         return NextResponse.redirect(new URL('/auth/error', request.url));
-
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
-
-    if(!user)
-        return NextResponse.redirect(new URL('/auth/error', request.url));
-
-    const requestHeaders = new Headers(request.headers);
-
-    if(user.app_metadata.provider === 'google') {
-        const [firstName, lastName] = (user.user_metadata.full_name ?? '').split(' ');
-        requestHeaders.set('x-first-name', firstName);
-        requestHeaders.set('x-last-name', lastName);
     }
-
-    return NextResponse.next({
-        request: {
-            headers: requestHeaders
-        }
-    });
 }
 
 export const config = {

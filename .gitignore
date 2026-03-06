@@ -44,3 +44,5 @@ supabase/config.toml
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/prisma/app/generated/prisma
