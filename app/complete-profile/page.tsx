@@ -1,7 +1,13 @@
+import { headers } from 'next/headers';
 import Header from '../components/header';
 import ProfileUploadForm from './profile-upload-form'
 
-const UploadProfile = () => {
+const UploadProfile = async () => {
+    const headerList = await headers();
+
+    const firstName = headerList.get('x-first-name') ?? undefined;
+    const lastName = headerList.get('x-last-name') ?? undefined;
+    
     return (
         <div className="h-screen flex flex-col items-center bg-black text-white">
             <Header disableIcon={true} href="/register"/>
@@ -12,7 +18,10 @@ const UploadProfile = () => {
                     <p className="text-gray-400 mt-2">Adicione uma foto e seu nome para continuar</p>
                 </div>
 
-                <ProfileUploadForm />
+                <ProfileUploadForm 
+                    firstName={firstName}
+                    lastName={lastName}
+                />
             </main>
 
             <footer className="pb-10">

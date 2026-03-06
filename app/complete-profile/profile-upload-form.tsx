@@ -5,7 +5,7 @@ import { Camera } from 'lucide-react';
 import { completeProfile, completeProfileType } from '../schemas/complete-profile';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-export default function ProfileUploadForm() {
+export default function ProfileUploadForm({ firstName, lastName }: ProfileUploadForm) {
     const [preview, setPreview] = useState<string | null>(null);
     
     const { 
@@ -13,7 +13,11 @@ export default function ProfileUploadForm() {
         handleSubmit, 
         formState: { errors }
     } = useForm<completeProfileType>({
-        resolver: zodResolver(completeProfile)
+        resolver: zodResolver(completeProfile),
+        defaultValues: {
+            name: firstName,
+            lastName: lastName
+        }
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,4 +85,9 @@ export default function ProfileUploadForm() {
             </div>
         </form>
     )
+}
+
+export interface ProfileUploadForm {
+    firstName?: string,
+    lastName?: string
 }
