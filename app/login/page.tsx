@@ -5,7 +5,6 @@ import Header from '../components/header';
 import AppleSvg from '../img/svg/apple';
 import LoginForm from './login-form';
 import GoogleLoginButton from '../components/google-login-button';
-import AppleLoginButton from '../components/apple-login-button';
 
 const Login = () => {
     const scheduleName = "Casamento de [Nome]"; // Exemplo para a variável ${scheduleName}
@@ -40,15 +39,6 @@ const Login = () => {
                         text="Faça login com Google"
                     >
                     </GoogleLoginButton>
-                    <AppleLoginButton
-                        color="white"
-                        background="black"
-                        borderColor="black"
-                        iconComponent={
-                            <AppleSvg width="25px" height="25px" />
-                        }
-                        text="Faça login com Apple"
-                    ></AppleLoginButton>
                     <div className="flex items-center justify-center gap-4 pt-6">
                         <div className="text-4xl font-black">
                             ?

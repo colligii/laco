@@ -4,6 +4,7 @@ import ButtonIcon from '../components/button-icon'
 import Header from '../components/header';
 import AppleSvg from '../img/svg/apple';
 import RegisterForm from './register-form';
+import GoogleLoginButton from '../components/google-login-button';
 
 const Login = () => {
     const scheduleName = "Casamento de [Nome]"; // Exemplo para a variável ${scheduleName}
@@ -25,7 +26,7 @@ const Login = () => {
 
 
                 <div className="w-full max-w-sm space-y-4">
-                    <ButtonIcon
+                    <GoogleLoginButton
                         color="black"
                         background="white"
                         iconComponent={
@@ -36,18 +37,7 @@ const Login = () => {
                             />
                         }
                         text="Registre-se com Google"
-                    >
-                    </ButtonIcon>
-                    <ButtonIcon
-                        color="white"
-                        background="black"
-                        borderColor="black"
-                        iconComponent={
-                            <AppleSvg width="25px" height="25px" />
-                        }
-                        text="Registre-se com Apple"
-                    >
-                    </ButtonIcon>
+                    ></GoogleLoginButton>
 
                     <div className="flex items-center justify-center gap-4 pt-6">
                         <div className="text-4xl font-black">
