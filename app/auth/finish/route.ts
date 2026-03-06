@@ -2,7 +2,7 @@ import { PrismaClient } from "@/prisma/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 import { NextRequest, NextResponse } from "next/server";
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
 
 
 export async function GET(request: NextRequest) {
@@ -76,17 +76,26 @@ export async function GET(request: NextRequest) {
                 id: user.id
             }
 
-            const token = jwt.sign(payload, process.env.COMPLETE_PROFILE_SECRET!, {
-                expiresIn: "1h"
+            const secret = new TextEncoder().encode(process.env.COMPLETE_PROFILE_SECRET!)
+
+            const token = await new jose.SignJWT(payload)
+                .setProtectedHeader({ alg: 'HS256' })
+                .setIssuedAt()
+                .setExpirationTime('2h')
+                .sign(secret);
+
+            const response = NextResponse.redirect(new URL(`/complete-profile`, request.url));
+            
+            response.cookies.set('complete-token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 60 * 60
             })
 
-            requestHeaders.set('complete-token', token);
-
-            return NextResponse.redirect(new URL(`/complete-profile?authToken=${token}`, request.url));
+            return response;
         }
-
-
-
 
         return new NextResponse('<h1></h1>', {
             status: 200, headers: {
