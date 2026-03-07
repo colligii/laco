@@ -1,10 +1,12 @@
 import Header from '../components/header';
 import RegisterForm from './register-form';
 import GoogleLoginButton from '../components/google-login-button';
+import Loading from '../components/loading';
 
 const Register = () => {
     return (
         <div className="h-screen flex flex-col items-center bg-black text-white">
+            <Loading></Loading>
             <Header disableIcon={true} href="/" />
             
             <main className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-sm">

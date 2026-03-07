@@ -21,8 +21,8 @@ export function validateRequest<
       let body: unknown = undefined;
       if (bodySchema) {
         try {
-          body = await request.json();
-        } catch {
+            body = await request.json();
+        } catch(e) {
           return NextResponse.json(
             { errors: ["JSON inválido no corpo da requisição"] },
             { status: 400 }

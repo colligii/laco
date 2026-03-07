@@ -4,15 +4,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 const CameraScreen = ({ selectedEventName = "Nome do Evento" }) => {
-  const videoRef = useRef(null);
-  const [stream, setStream] = useState(null);
-  const [error, setError] = useState(null);
+  const videoRef:any = useRef(null);
+  const [stream, setStream]: any = useState(null);
+  const [error, setError]: any = useState(null);
   const [activeTab, setActiveTab] = useState('Feed');
 
   // Função para solicitar e iniciar a câmera
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      const mediaStream:any = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user', aspectRatio: 16/9 }, 
         audio: false 
       });
@@ -31,7 +31,7 @@ const CameraScreen = ({ selectedEventName = "Nome do Evento" }) => {
     // Limpeza ao fechar a tela
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track: any) => track.stop());
       }
     };
   }, []);

@@ -3,9 +3,15 @@ import { useForm } from 'react-hook-form'
 import { loginUser, type loginUserType } from '../schemas/login-user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUser, registerUserType } from '../schemas/register-user';
+import { useLoading } from '../zustand/store';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
     
+    const { setIsLoading } = useLoading();
+    const router = useRouter();
+
     const { 
         register,
         handleSubmit, 
@@ -15,7 +21,19 @@ export default function LoginForm() {
         resolver: zodResolver(registerUser)
     });
     
-    const onSubmit = (data: any) => {
+    const onSubmit = async (data: any) => {
+        try {
+            setIsLoading(true);
+
+            await axios.post('/api/user', data);
+            router.push('complete-profile');
+
+
+
+        } catch(e) {
+            console.log(e)
+            setIsLoading(false);
+        }
     }
     
     return (
