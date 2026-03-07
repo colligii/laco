@@ -23,6 +23,7 @@ model User {
   provider  Provider @default(Local)
   avatarId  String?  @unique
   avatar  File?  @relation(fields: [avatarId], references: [id])
+  session Session[]
 
   @@map("user")
 }
@@ -33,6 +34,12 @@ model File {
   user  User?
 
   @@map("file")
+}
+
+model Session {
+  id  String  @id @default(uuid())
+  userId  String
+  user  User  @relation(fields: [userId], references: [id])
 }
 
 enum Provider {

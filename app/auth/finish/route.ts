@@ -64,14 +64,11 @@ export async function GET(request: NextRequest) {
                     firstName,
                     lastName,
                     provider: 'Google'
-                },
-                includes: {
-                    avatar: true
                 }
             });
         }
 
-        if (!user.firstName || !user.lastName || !user.avatar) {
+        if (!user.firstName || !user.lastName || !user.avatarId) {
             const payload = {
                 id: user.id
             }
@@ -97,12 +94,38 @@ export async function GET(request: NextRequest) {
             return response;
         }
 
-        return new NextResponse('<h1></h1>', {
-            status: 200, headers: {
-                'Content-Type': 'text/html'
+        const session = await prisma.session.create({
+            data: {
+                userId: user.id
             }
-        });
+        })
+
+        const payload = {
+            id: session.id
+        };
+
+        const secret = new TextEncoder().encode(process.env.AUTH_SECRET!)
+
+        const token = await new jose.SignJWT(payload)
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('24h')
+            .sign(secret);
+
+        const response = NextResponse.redirect(new URL(`/main`, request.url));
+        
+        response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60
+        })
+
+        return response;
+
     } catch (e) {
+        console.log(e);
         return NextResponse.redirect(new URL('/auth/error', request.url));
     }
 }
