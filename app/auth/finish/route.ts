@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from 'jose';
+import { includes } from "zod";
 
 
 export async function GET(request: NextRequest) {
@@ -67,11 +68,14 @@ export async function GET(request: NextRequest) {
                     firstName,
                     lastName,
                     provider: 'Google'
+                },
+                includes: {
+                    avatar: true
                 }
             });
         }
 
-        if (!user.firstName || !user.lastName || !false) {
+        if (!user.firstName || !user.lastName || !user.avatar) {
             const payload = {
                 id: user.id
             }

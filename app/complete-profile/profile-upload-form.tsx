@@ -4,13 +4,15 @@ import { useForm } from 'react-hook-form';
 import { Camera } from 'lucide-react';
 import { completeProfile, completeProfileType } from '../schemas/complete-profile';
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios'
 
 export default function ProfileUploadForm({ firstName, lastName }: ProfileUploadForm) {
     const [preview, setPreview] = useState<string | null>(null);
-    
-    const { 
+
+    const {
         register,
-        handleSubmit, 
+        setValue,
+        handleSubmit,
         formState: { errors }
     } = useForm<completeProfileType>({
         resolver: zodResolver(completeProfile),
@@ -24,11 +26,27 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
         const file = e.target.files?.[0];
         if (file) {
             setPreview(URL.createObjectURL(file));
+            console.log(file.size)
+            setValue('avatar', file)
         }
     };
 
-    const onSubmit = (data: any) => {
-        console.log(data);
+    const onSubmit = async (data: any) => {
+        try {
+            const formData = new FormData();
+
+            formData.append("file", data.avatar);
+
+            const upload = await axios.post('/api/s3/user/upload/avatar', formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            })
+
+            console.log(upload)
+        } catch (e) {
+            console.log(e)
+        }
     }
 
     return (
@@ -43,41 +61,41 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
                             <Camera className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors" />
                         )}
                     </div>
-                    <input 
+                    <input
                         id="profile-pic"
-                        type="file" 
+                        type="file"
                         accept="image/*"
-                        className="hidden" 
+                        className="hidden"
                         {...register('avatar')}
                         onChange={handleImageChange}
                     />
                 </label>
                 <span className="text-xs text-gray-400">Clique para carregar foto</span>
+                {errors.avatar && <span className="text-red-400 text-xs">{errors.avatar.message as string}</span>}
             </div>
 
             <div className="flex flex-col gap-1">
                 <label className='text-sm' htmlFor='firstName'>Nome:</label>
-                <input 
-                    placeholder="Seu primeiro nome" 
-                    className="p-1.5 px-3 bg-transparent border border-white rounded-full text-white outline-none focus:ring-2 focus:ring-blue-500" 
+                <input
+                    placeholder="Seu primeiro nome"
+                    className="p-1.5 px-3 bg-transparent border border-white rounded-full text-white outline-none focus:ring-2 focus:ring-blue-500"
                     {...register('name', { required: "Nome é obrigatório" })}
                 />
-                {errors.name && <span className="text-red-400 text-xs">{errors.name.message as string}</span>}
             </div>
 
             <div className="flex flex-col gap-1">
                 <label className="text-sm" htmlFor='lastName'>Sobrenome:</label>
-                <input 
-                    placeholder="Seu sobrenome" 
-                    className="p-1.5 px-3 bg-transparent border border-white rounded-full text-white outline-none focus:ring-2 focus:ring-blue-500" 
+                <input
+                    placeholder="Seu sobrenome"
+                    className="p-1.5 px-3 bg-transparent border border-white rounded-full text-white outline-none focus:ring-2 focus:ring-blue-500"
                     {...register('lastName', { required: "Sobrenome é obrigatório" })}
                 />
                 {errors.lastName && <span className="text-red-400 text-xs">{errors.lastName.message as string}</span>}
             </div>
 
             <div className="flex flex-col items-center pt-4">
-                <button 
-                    className='p-2 bg-blue-700 hover:bg-blue-600 transition-colors rounded-full w-full font-bold' 
+                <button
+                    className='p-2 bg-blue-700 hover:bg-blue-600 transition-colors rounded-full w-full font-bold'
                     type="submit"
                 >
                     Salvar Perfil

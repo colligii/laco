@@ -6,8 +6,6 @@ export async function middleware(request: NextRequest) {
     try {
         const authToken = request.cookies.get('complete-token');
 
-        console.log(authToken)
-
         if(!authToken || !authToken.value)
             return NextResponse.json({ message: 'Auth Token is not defined' }, { status: 400 });
 
@@ -41,6 +39,10 @@ export async function middleware(request: NextRequest) {
 
         if(!user)
             return NextResponse.json({ message: 'User not founded' }, { status: 400 });
+
+        if(user.firstName && user.lastName && user.avatarId) {
+            return NextResponse.redirect(new URL('/main', request.url))
+        }
 
         const requestHeaders = new Headers(request.headers);
         

@@ -21,8 +21,18 @@ model User {
   firstName String?   @db.VarChar(50)
   lastName  String?   @db.VarChar(50)
   provider  Provider @default(Local)
+  avatarId  String?  @unique
+  avatar  File?  @relation(fields: [avatarId], references: [id])
 
   @@map("user")
+}
+
+model File {
+  id  String  @id @default(uuid())
+  path  String
+  user  User?
+
+  @@map("file")
 }
 
 enum Provider {
