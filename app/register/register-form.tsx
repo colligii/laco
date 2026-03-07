@@ -6,6 +6,7 @@ import { registerUser, registerUserType } from '../schemas/register-user';
 import { useLoading } from '../zustand/store';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function LoginForm() {
     
@@ -22,18 +23,23 @@ export default function LoginForm() {
     });
     
     const onSubmit = async (data: any) => {
-        try {
-            setIsLoading(true);
-
-            await axios.post('/api/user', data);
-            router.push('complete-profile');
-
-
-
-        } catch(e) {
-            console.log(e)
-            setIsLoading(false);
-        }
+        toast.promise(async () => {
+            try {
+                setIsLoading(true);
+    
+                await axios.post('/api/user', data);
+                router.push('complete-profile');
+    
+            } catch(e) {
+                setIsLoading(false);
+                throw e;
+            }
+        }, {
+            position: 'top-center',
+            loading: 'Carregando',
+            success: 'Usuário criado com sucesso',
+            error: (err) => err?.response?.data?.message
+        })
     }
     
     return (

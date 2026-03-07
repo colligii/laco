@@ -7,11 +7,13 @@ import Header from '../components/header';
 import RegisterForm from './register-form';
 import GoogleLoginButton from '../components/google-login-button';
 import Loading from '../components/loading';
+import { toast } from 'sonner';
 
 const Register = () => {
   const [isExiting, setIsExiting] = useState(false);
   const [targetHref, setTargetHref] = useState('');
   const router = useRouter();
+
 
   const handleBackClick = (href: string) => {
     setTargetHref(href);
