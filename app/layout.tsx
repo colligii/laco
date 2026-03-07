@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, Inter } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const nunitoSans = Nunito({
   variable: "--font-nunito-sans",
@@ -18,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", inter.variable)}>
       <body
         className={`${nunitoSans.variable} antialiased`}
       >
