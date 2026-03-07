@@ -4,8 +4,6 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from "jose";
 import { prisma } from "@/app/lib/prisma";
-import { UserUpdateInput } from "@/prisma/app/generated/prisma/models";
-
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
@@ -68,7 +66,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(userResponse);
     } catch(e) {
-        console.log(e);
         return NextResponse.json({ message: 'Erro ao fazer upload no avatar' }, { status: 500 })
     }
 }

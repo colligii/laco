@@ -26,7 +26,6 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
         const file = e.target.files?.[0];
         if (file) {
             setPreview(URL.createObjectURL(file));
-            console.log(file.size)
             setValue('avatar', file)
         }
     };
@@ -43,9 +42,7 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
                 }
             })
 
-            console.log(upload)
         } catch (e) {
-            console.log(e)
         }
     }
 

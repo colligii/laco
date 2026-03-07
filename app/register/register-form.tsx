@@ -16,7 +16,6 @@ export default function LoginForm() {
     });
     
     const onSubmit = (data: any) => {
-        console.log(data)
     }
     
     return (

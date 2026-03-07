@@ -1,9 +1,8 @@
-import { PrismaClient } from "@/prisma/app/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from 'jose';
 import { includes } from "zod";
+import { prisma } from "@/app/lib/prisma";
 
 
 export async function GET(request: NextRequest) {
@@ -11,10 +10,7 @@ export async function GET(request: NextRequest) {
         const requestUrl = new URL(request.url);
         const searchParams = requestUrl.searchParams;
         const requestHeaders = new Headers(request.headers);
-        const prismaClient = new PrismaClient({
-            adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
-        });
-
+ 
         let email;
         let firstName;
         let lastName;
@@ -55,14 +51,14 @@ export async function GET(request: NextRequest) {
         if (!email)
             throw new Error('E-mail is not defined');
 
-        let user = await prismaClient.user.findFirst({
+        let user = await prisma.user.findFirst({
             where: {
                 email: email!
             }
         });
 
         if (!user) {
-            user = await prismaClient.user.create({
+            user = await prisma.user.create({
                 data: {
                     email: email!,
                     firstName,

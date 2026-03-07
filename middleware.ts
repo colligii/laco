@@ -54,7 +54,6 @@ export async function middleware(request: NextRequest) {
         });
     
     } catch(e) {
-        console.log(e)
         return NextResponse.redirect(new URL('/auth/error', request.url));
     }
 }
