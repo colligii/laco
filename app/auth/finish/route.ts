@@ -94,9 +94,13 @@ export async function GET(request: NextRequest) {
             return response;
         }
 
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
         const session = await prisma.session.create({
             data: {
-                userId: user.id
+                userId: user.id,
+                expires_at: expiresAt
             }
         })
 

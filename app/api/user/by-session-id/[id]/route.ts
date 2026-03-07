@@ -14,14 +14,15 @@ export const GET = validateRequest(
             );
           }
       
-          const session = await prisma.session.findUnique({
-              where: {
-                  id: params.id
-              },
-              include: {
-                  user: true
-              }
-          })
+          const session = await prisma.session.findFirst({
+            where: {
+                id: params.id,
+                expires_at: { gt: new Date() }
+            },
+            include: {
+                user: true
+            }
+        })
       
           if(!session)
               return NextResponse.json(

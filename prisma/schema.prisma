@@ -40,6 +40,9 @@ model Session {
   id  String  @id @default(uuid())
   userId  String
   user  User  @relation(fields: [userId], references: [id])
+  expires_at  DateTime
+
+  @@map("session")
 }
 
 enum Provider {
