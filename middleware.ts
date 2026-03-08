@@ -52,8 +52,6 @@ export async function middleware(request: NextRequest) {
             });
         }
 
-        console.log(url.pathname)
-
         if (url.pathname === '/main' || url.pathname === '/login' || url.pathname === '/register') {
             try {
                 const authToken = request.cookies.get('token');
