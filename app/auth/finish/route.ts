@@ -126,6 +126,8 @@ export async function GET(request: NextRequest) {
             maxAge: 60 * 60
         })
 
+        response.cookies.delete('complete-token');
+
         return response;
 
     } catch (e) {

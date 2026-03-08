@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import Header from '../components/header';
 import ProfileUploadForm from './profile-upload-form'
+import { ImageCropperModal } from '../components/image-cropper-modal';
+import Loading from '../components/loading';
 
 const UploadProfile = async () => {
     const headerList = await headers();
@@ -10,6 +12,7 @@ const UploadProfile = async () => {
     
     return (
         <div className="h-screen flex flex-col items-center bg-black text-white">
+            <Loading/>
             <Header disableIcon={true} href="/register"/>
             
             <main className="flex-1 flex flex-col items-center justify-center px-4">

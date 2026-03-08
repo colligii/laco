@@ -5,9 +5,14 @@ import { Camera } from 'lucide-react';
 import { completeProfile, completeProfileType } from '../schemas/complete-profile';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios'
+import { ImageCropperModal } from '../components/image-cropper-modal';
+import { useLoading } from '../zustand/store';
+import { toast } from 'sonner';
 
 export default function ProfileUploadForm({ firstName, lastName }: ProfileUploadForm) {
-    const [preview, setPreview] = useState<string | null>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [finalImage, setFinalImage] = useState<string | null>(null);
+    const { setIsLoading } = useLoading();
 
     const {
         register,
@@ -25,25 +30,57 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setPreview(URL.createObjectURL(file));
-            setValue('avatar', file)
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => setSelectedImage(reader.result as string);
         }
     };
 
-    const onSubmit = async (data: any) => {
-        try {
-            const formData = new FormData();
+    const onSubmit = (data: any) => {
+        toast.promise(async () => {
+            try {
+                setIsLoading(true);
+    
+                const formData = new FormData();
+    
+                formData.append("file", data.avatar);
+    
+                await axios.post('/api/s3/user/upload/avatar', formData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
+                })
+    
+                await axios.patch('/api/user/complete-profile', {
+                    firstName: data.name,
+                    lastName: data.lastName
+                })
+    
+                window.location.pathname = ('/auth/exchange-token');
+    
+                setIsLoading(false);
+            } catch (e) {
+                setIsLoading(false);
+            }
+        }, {
+            position: 'top-center',
+            success: 'Usuário atualizado com sucesso',
+            error: (err) => err?.response?.data?.message
+        })
+        
+    }
 
-            formData.append("file", data.avatar);
+    const cropComplete = async (img: string) => {
+        setFinalImage(img);
+        
+        setIsLoading(true);        
 
-            const upload = await axios.post('/api/s3/user/upload/avatar', formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data"
-                }
-            })
-
-        } catch (e) {
-        }
+        const response = await fetch(img);
+        const blob = await response.blob();
+        const file = new File([blob], 'finish-img', { type: blob.type })
+        
+        setIsLoading(false);
+        setValue('avatar', file);
     }
 
     return (
@@ -52,8 +89,8 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
             <div className="flex flex-col items-center gap-2">
                 <label htmlFor="profile-pic" className="relative cursor-pointer group">
                     <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center overflow-hidden bg-gray-800">
-                        {preview ? (
-                            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                        {finalImage ? (
+                            <img src={finalImage} alt="Preview" className="w-full h-full object-cover" />
                         ) : (
                             <Camera className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors" />
                         )}
@@ -98,6 +135,12 @@ export default function ProfileUploadForm({ firstName, lastName }: ProfileUpload
                     Salvar Perfil
                 </button>
             </div>
+            <ImageCropperModal
+                image={selectedImage}
+                isOpen={!!selectedImage}
+                onClose={() => setSelectedImage(null)}
+                onCropComplete={cropComplete}
+            />
         </form>
     )
 }

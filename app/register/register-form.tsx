@@ -28,6 +28,7 @@ export default function LoginForm() {
                 setIsLoading(true);
     
                 await axios.post('/api/user', data);
+                setIsLoading(false);
                 router.push('complete-profile');
     
             } catch(e) {
