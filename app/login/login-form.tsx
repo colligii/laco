@@ -2,19 +2,42 @@
 import { useForm } from 'react-hook-form'
 import { loginUser, type loginUserType } from '../schemas/login-user';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+import { useLoading } from '../zustand/store';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
     
     const { 
         register,
-        handleSubmit, 
-        watch, 
+        handleSubmit,
         formState: { errors }
     } = useForm<loginUserType>({
         resolver: zodResolver(loginUser)
     });
+    const { setIsLoading } = useLoading();
+    const router = useRouter();
     
     const onSubmit = (data: any) => {
+        toast.promise(async () => {
+            try {
+                setIsLoading(true);
+    
+                await axios.post('/auth/login', data);
+                setIsLoading(false);
+                router.push('main');
+    
+            } catch(e) {
+                setIsLoading(false);
+                throw e;
+            }
+        }, {
+            position: 'top-center',
+            loading: 'Carregando',
+            success: 'Usuário logado com sucesso',
+            error: (err) => err?.response?.data?.message
+        })
     }
     
     return (
