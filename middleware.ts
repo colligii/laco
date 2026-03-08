@@ -52,37 +52,47 @@ export async function middleware(request: NextRequest) {
             });
         }
 
-        else if (url.pathname === '/main') {
-            const authToken = request.cookies.get('token');
+        console.log(url.pathname)
 
-            if (!authToken || !authToken.value)
-                throw new Error('Auth Token is not defined');
+        if (url.pathname === '/main' || url.pathname === '/login' || url.pathname === '/register') {
+            try {
+                const authToken = request.cookies.get('token');
 
-            const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
+                if (!authToken || !authToken.value)
+                    throw new Error('Auth Token is not defined');
 
-            const { payload } = await jose.jwtVerify(authToken.value, secret);
+                const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
 
-            if (!payload)
-                throw new Error('Payload is not valid');
+                const { payload } = await jose.jwtVerify(authToken.value, secret);
 
-            if (!payload || typeof payload === 'string' || !payload.id)
-                throw new Error('Payload is not valid');
+                if (!payload)
+                    throw new Error('Payload is not valid');
+
+                if (!payload || typeof payload === 'string' || !payload.id)
+                    throw new Error('Payload is not valid');
 
 
-            const userRequest = await fetch(`${url.origin}/api/user/by-session-id/${payload.id}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    accessToken: process.env.ACCESS_TOKEN!
-                }
-            })
+                const userRequest = await fetch(`${url.origin}/api/user/by-session-id/${payload.id}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        accessToken: process.env.ACCESS_TOKEN!
+                    }
+                })
 
-            if (userRequest.status !== 200)
-                throw new Error('Error in request user');
+                if (userRequest.status !== 200)
+                    throw new Error('Error in request user');
 
-            const user = await userRequest.json();
+                const user = await userRequest.json();
 
-            if (!user)
-                throw new Error('User not founded');
+                if (!user)
+                    throw new Error('User not founded');
+
+                if(url.pathname === '/login' || url.pathname === '/register')
+                    return NextResponse.redirect(new URL('/main', request.url));
+            } catch (e) {
+                if(url.pathname !== '/login' && url.pathname !== '/register')
+                    throw e;        
+            }
         }
 
         return NextResponse.next();
