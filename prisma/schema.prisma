@@ -14,81 +14,109 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @db.VarChar(50)  @unique()
-  type      UserType @default(User)
-  password  String?  @db.VarChar(255)
-  firstName String?   @db.VarChar(50)
-  lastName  String?   @db.VarChar(50)
-  provider  Provider @default(Local)
-  avatarId  String?  @unique
-  avatar  File?  @relation(fields: [avatarId], references: [id])
-  session Session[]
-  stories Story[]
-  story_viewed  StoryViewed[] @relation()
+  id           String        @id @default(uuid())
+  email        String        @unique() @db.VarChar(50)
+  type         UserType      @default(User)
+  password     String?       @db.VarChar(255)
+  firstName    String?       @db.VarChar(50)
+  lastName     String?       @db.VarChar(50)
+  provider     Provider      @default(Local)
+  avatarId     String?       @unique
+  avatar       File?         @relation(fields: [avatarId], references: [id])
+  session      Session[]
+  stories      Story[]
+  story_viewed StoryViewed[] @relation()
 
   @@map("user")
+  storyReactions StoryReaction[]
 }
 
 model File {
-  id  String  @id @default(uuid())
-  path  String
-  user  User?
-  vertical_event Event[] @relation("VerticalEventFile")
+  id               String  @id @default(uuid())
+  path             String
+  user             User?
+  vertical_event   Event[] @relation("VerticalEventFile")
   horizontal_event Event[] @relation("HorizontalEventFile")
-  stories Story[]
+  stories          Story[]
 
   @@map("file")
 }
 
 model Session {
-  id  String  @id @default(uuid())
-  userId  String
-  user  User  @relation(fields: [userId], references: [id])
-  expires_at  DateTime
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  expires_at DateTime
 
   @@map("session")
 }
 
 model Event {
-  id  String  @id @default(uuid())
-  name  String  @db.VarChar(50)
-  start_date  DateTime
-  end_date  DateTime
-  vertical_file_id String  
-  vertical_file  File  @relation("VerticalEventFile", fields: [vertical_file_id], references: [id])
+  id               String   @id @default(uuid())
+  name             String   @db.VarChar(50)
+  start_date       DateTime
+  end_date         DateTime
+  vertical_file_id String
+  vertical_file    File     @relation("VerticalEventFile", fields: [vertical_file_id], references: [id])
 
-  horizontal_file_id String  
-  horizontal_file  File  @relation("HorizontalEventFile", fields: [horizontal_file_id], references: [id])
+  horizontal_file_id String
+  horizontal_file    File    @relation("HorizontalEventFile", fields: [horizontal_file_id], references: [id])
+  stories            Story[]
 
   @@map("event")
 }
 
 model Story {
-  id  String  @id @default(uuid())
-  created_at  DateTime  @default(now())
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
 
   user_id String
-  user  User  @relation(fields: [user_id], references: [id])
-  
-  file_id String
-  file  File  @relation(fields: [file_id], references: [id])
+  user    User   @relation(fields: [user_id], references: [id])
 
-  story_viewed  StoryViewed[] @relation()
+  file_id String
+  file    File   @relation(fields: [file_id], references: [id])
+
+  event_id String
+  event    Event  @relation(fields: [event_id], references: [id])
+
+  story_viewed StoryViewed[] @relation()
 
   @@map("story")
+  storyReactions StoryReaction[]
 }
 
 model StoryViewed {
   user_id String
-  user  User  @relation(fields: [user_id], references: [id])
+  user    User   @relation(fields: [user_id], references: [id])
 
   story_id String
-  story  Story  @relation(fields: [story_id], references: [id])
+  story    Story  @relation(fields: [story_id], references: [id])
 
   @@id([user_id, story_id])
-
   @@map("story_viewed")
+}
+
+model StoryReaction {
+  story_id String
+  story    Story  @relation(fields: [story_id], references: [id])
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+
+  reaction Reaction
+
+  @@id([story_id, user_id])
+
+  @@map("story_reaction")
+}
+
+enum Reaction {
+  Like
+  Smile
+  Clap
+  Heart
+
+  @@map("reaction")
 }
 
 enum Provider {
