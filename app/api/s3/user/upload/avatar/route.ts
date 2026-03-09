@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
 
         const createdFile = await prisma.file.create({
             data: {
-                path
+                path,
+                type: 'Photo'
             }
         });
 

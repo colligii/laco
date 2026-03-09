@@ -35,6 +35,7 @@ model File {
   id               String  @id @default(uuid())
   path             String
   user             User?
+  type             FileType
   vertical_event   Event[] @relation("VerticalEventFile")
   horizontal_event Event[] @relation("HorizontalEventFile")
   stories          Story[]
@@ -118,6 +119,14 @@ enum Reaction {
 
   @@map("reaction")
 }
+
+enum FileType {
+  Video
+  Photo
+
+  @@map("file_type")
+}
+
 
 enum Provider {
   Local

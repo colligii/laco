@@ -13,20 +13,21 @@ type TheirStory = {
 
 type TheirStoriesVirtualListProps = {
   stories: TheirStory[];
+  onClick: (user_id: string) => void
 };
 
-type TheirStoryCellProps = CellComponentProps<{ stories: TheirStory[] }>;
+type TheirStoryCellProps = CellComponentProps<{ stories: TheirStory[], onClick: (user_id: string) => void }>;
 
 const ITEM_WIDTH = 88;
 const ITEM_HEIGHT = 96;
 
-const TheirStoryCell = memo(function TheirStoryCell({ columnIndex, stories, style }: TheirStoryCellProps) {
+const TheirStoryCell = memo(function TheirStoryCell({ columnIndex, stories, style, onClick }: TheirStoryCellProps) {
   const story = stories[columnIndex];
 
   if (!story) return null;
 
   return (
-    <div style={style} className="flex items-start justify-center">
+    <div onClick={() => onClick(story.user_id)} style={style} className="flex items-start justify-center">
       <div className="flex w-[72px] flex-col items-center gap-2">
         <div className="relative">
           <img
@@ -44,7 +45,7 @@ const TheirStoryCell = memo(function TheirStoryCell({ columnIndex, stories, styl
   );
 });
 
-export default function TheirStoriesVirtualList({ stories }: TheirStoriesVirtualListProps) {
+export default function TheirStoriesVirtualList({ stories, onClick }: TheirStoriesVirtualListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(320);
 
@@ -68,7 +69,7 @@ export default function TheirStoriesVirtualList({ stories }: TheirStoriesVirtual
     <div ref={containerRef} className="min-w-0 flex-1 h-24">
       <Grid
         cellComponent={TheirStoryCell}
-        cellProps={{ stories }}
+        cellProps={{ stories, onClick }}
         className="no-scrollbar"
         columnCount={stories.length}
         columnWidth={ITEM_WIDTH}

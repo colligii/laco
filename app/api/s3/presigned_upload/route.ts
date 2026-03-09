@@ -26,7 +26,8 @@ export const POST = validateRequest(async ({
 
         const createdFile = await prisma.file.create({
             data: {
-                path
+                path,
+                type: body.fileType === 'photo' ? 'Photo' : 'Video'
             }
         });
 
