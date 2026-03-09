@@ -32,6 +32,8 @@ model File {
   id  String  @id @default(uuid())
   path  String
   user  User?
+  vertical_event Event[] @relation("VerticalEventFile")
+  horizontal_event Event[] @relation("HorizontalEventFile")
 
   @@map("file")
 }
@@ -43,6 +45,20 @@ model Session {
   expires_at  DateTime
 
   @@map("session")
+}
+
+model Event {
+  id  String  @id @default(uuid())
+  name  String  @db.VarChar(50)
+  start_date  DateTime
+  end_date  DateTime
+  vertical_file_id String  
+  vertical_file  File  @relation("VerticalEventFile", fields: [vertical_file_id], references: [id])
+
+  horizontal_file_id String  
+  horizontal_file  File  @relation("HorizontalEventFile", fields: [horizontal_file_id], references: [id])
+
+  @@map("event")
 }
 
 enum Provider {
