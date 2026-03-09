@@ -46,6 +46,7 @@ export const GET = validateRequest(async ({
             'id', s.id,
             'path', sf.path,
             'created_at', s.created_at,
+            'type', sf.type,
             'not_viewed', (sv.user_id is null)
         )
         order by s.created_at
@@ -107,6 +108,7 @@ export type UserIdStoryResponse = {
         id: string,
         path: string,
         created_at: Date,
-        not_viewed: boolean
+        not_viewed: boolean,
+        type: 'Video' | 'Photo'
     }[]
 }
