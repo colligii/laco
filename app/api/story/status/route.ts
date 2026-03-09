@@ -11,28 +11,28 @@ export const GET = validateRequest(async ({
 }) => {
     try {
 
-    const url = new URL(request.url);
-    const eventId = url.searchParams.get('eventId');
-    
-    if(!payloadSession?.id)
-        return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
+        const url = new URL(request.url);
+        const eventId = url.searchParams.get('eventId');
 
-    const session = await prisma.session.findUnique({
-        where: {
-            id: payloadSession?.id
-        },
-        include: {
-            user: true
-        }
-    })
+        if (!payloadSession?.id)
+            return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-    if(!session || !session.user)
-        return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
+        const session = await prisma.session.findUnique({
+            where: {
+                id: payloadSession?.id
+            },
+            include: {
+                user: true
+            }
+        })
 
-    if(!idIsUUID.safeParse({ id: eventId }).success)
-        return NextResponse.json({ message: 'Id do evento não está definido' }, { status: 400 })
+        if (!session || !session.user)
+            return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
-    const stories: StoryResponse[] = await prisma.$queryRaw`
+        if (!idIsUUID.safeParse({ id: eventId }).success)
+            return NextResponse.json({ message: 'Id do evento não está definido' }, { status: 400 })
+
+        let stories: StoryResponse[] = await prisma.$queryRaw`
         select
             u."id" as "user_id",
             u."firstName",
@@ -58,21 +58,25 @@ export const GET = validateRequest(async ({
             max(s.created_at) desc;
         `;
 
-    for(const story of stories) {
-        story.avatar_path = await cloudfrontGetSignedUrl(story.avatar_path, 60 * 60)
-    }
+        stories = await Promise.all(
+            stories.map(async (story) => ({
+                ...story,
+                avatar_path: await cloudfrontGetSignedUrl(story.avatar_path, 60 * 60)
+            }))
+        )
 
-    return NextResponse.json(stories)
-    } catch(e) {
+
+        return NextResponse.json(stories)
+    } catch (e) {
         console.log(e)
         return NextResponse.json({ message: 'Error' })
     }
-}, undefined, undefined, 
-{
-    type: 'session',
-    secret: process.env.AUTH_SECRET!,
-    completeTokenVar: 'token'
-}
+}, undefined, undefined,
+    {
+        type: 'session',
+        secret: process.env.AUTH_SECRET!,
+        completeTokenVar: 'token'
+    }
 )
 
 export type StoryResponse = {

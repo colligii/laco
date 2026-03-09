@@ -5,29 +5,24 @@ import { NextRequest, NextResponse } from "next/server";
 import * as jose from "jose";
 import { prisma } from "@/app/lib/prisma";
 import { validateRequest } from "@/app/lib/validateRequest";
+import { createFile } from "@/app/schemas/createFile";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const POST = validateRequest(async ({
-    request
+    body
 }) => {
     try {
-        const formData = await request.formData();
-        const file = formData.get("file") as File;
 
-        if (!file)
-            return NextResponse.json({ message: 'Erro! Nenhum arquivo enviado' }, { status: 400 });
-
-        const path = 'story/' + randomUUID();
-
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const path = body.type === 'story' ? `story/${randomUUID()}` : `post/${randomUUID()}`
+        const mimetype = body.fileType === 'photo' ? 'image/webp' : 'video/webm';
 
         const command = new PutObjectCommand({
             Bucket: process.env.S3_BUCKET_NAME!,
             Key: path,
-            Body: buffer,
-            ContentType: file.type
+            ContentType: mimetype
         });
 
-        await s3.send(command);
+        const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 })
 
         const createdFile = await prisma.file.create({
             data: {
@@ -35,12 +30,12 @@ export const POST = validateRequest(async ({
             }
         });
 
-        return NextResponse.json(createdFile);
+        return NextResponse.json({ file: createdFile, url });
     } catch (e) {
         return NextResponse.json({ message: 'Erro ao fazer upload no avatar' }, { status: 500 })
     }
 
-}, undefined, undefined,
+}, createFile, undefined,
     {
         type: 'session',
         secret: process.env.AUTH_SECRET!,

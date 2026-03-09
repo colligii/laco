@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import axios from 'axios';
 import { FileModel } from '@/prisma/app/generated/prisma/models';
 import { useRouter } from 'next/navigation';
@@ -117,6 +117,9 @@ export default function StoryDetailScreen({ eventId, eventName }: { eventId: str
       setPublishMessage(null);
       setError(null);
 
+      let fileType;
+      let file;
+
       const payload = new FormData();
 
       if (draft.kind === 'photo') {
@@ -126,31 +129,43 @@ export default function StoryDetailScreen({ eventId, eventName }: { eventId: str
           return;
         }
 
+        fileType = 'photo';
+
         const webpBlob = await optimizeImageToWebp(sourceBlob);
-        payload.append('file', new File([webpBlob], `story-${Date.now()}.webp`, { type: 'image/webp' }));
+        file = new File([webpBlob], `story-${Date.now()}.webp`);
       } else {
+        fileType = 'video';
         const videoBlob = draft.blob ?? (draft.dataUrl ? await dataUrlToBlob(draft.dataUrl) : null);
         if (!videoBlob) {
           setError('Vídeo não encontrado.');
           return;
         }
 
-        payload.append('file', new File([videoBlob], `story-${Date.now()}.webm`, { type: 'video/webm' }));
+        file = new File([videoBlob], `story-${Date.now()}.webm`);      
       }
 
-      const { data: file }: { data: FileModel } = await axios.post('/api/s3/story', payload)
+      const { data: { file: fileModel, url } }: { data: { file: FileModel, url: string } } = await axios.post('/api/s3/presigned_upload', {
+        fileType, 
+        type: 'story'
+      })
+
+      await axios.put(url, file, {
+        headers: {
+          "Content-Type": file.type
+        }
+      });
       
       await axios.post('/api/story', {
-        file_id: file.id,
+        file_id: fileModel.id,
         event_id: eventId
       })
 
       setPublishMessage('Story publicado com sucesso para publicação.');
+      window.location.pathname = (`/event/${eventId}`)
     } catch (publishError) {
       console.error('Erro ao preparar story:', publishError);
       setError('Não foi possível preparar o story.');
     } finally {
-      window.location.pathname = (`/event/${eventId}`)
       setIsPublishing(false);
     }
   };
