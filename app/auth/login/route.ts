@@ -16,7 +16,7 @@ export const POST = validateRequest(async ({ body }) => {
         if(!findedUser || !findedUser.password)
             return NextResponse.json({ message: 'Usuário ou senha incorretos' }, { status: 401 });
         
-        const isPasswordValid = bcrypt.compare(body.password, findedUser.password);
+        const isPasswordValid = await bcrypt.compare(body.password, findedUser.password);
         
         if(!isPasswordValid)
             return NextResponse.json({ message: 'Usuário ou senha incorretos' }, { status: 401 });

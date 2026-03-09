@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Clock, MessageCircle, Users } from 'lucide-r
 import { AnimatePresence, motion } from 'framer-motion';
 import { EventResponse } from '../api/event/route';
 import formatDate from '../lib/formatDate';
+import { useRouter } from 'next/navigation';
 
 const MainContent = ({
   scheduleName = 'Nome da Programacao',
@@ -28,6 +29,7 @@ const MainContent = ({
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isAutoScrollingRef = useRef(false);
   const autoScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
 
   const centerCardByIndex = (index: number, behavior: ScrollBehavior = 'smooth') => {
     const card = cardRefs.current[index];
@@ -54,6 +56,7 @@ const MainContent = ({
   const handleSelect = (index: number) => {
     setCurrentIndex(index);
     centerCardByIndex(index);
+    router.replace(`/event/${events[index].id}`)
   };
 
   const handleStep = (direction: 'prev' | 'next') => {

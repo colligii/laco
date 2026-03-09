@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
             });
         }
 
-        if (url.pathname === '/main' || url.pathname === '/login' || url.pathname === '/register') {
+        if (url.pathname === '/main' || /^\/event/.test(url.pathname) || url.pathname === '/login' || url.pathname === '/register') {
             try {
                 const authToken = request.cookies.get('token');
 

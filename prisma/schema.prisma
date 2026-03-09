@@ -24,6 +24,8 @@ model User {
   avatarId  String?  @unique
   avatar  File?  @relation(fields: [avatarId], references: [id])
   session Session[]
+  stories Story[]
+  story_viewed  StoryViewed[] @relation()
 
   @@map("user")
 }
@@ -34,6 +36,7 @@ model File {
   user  User?
   vertical_event Event[] @relation("VerticalEventFile")
   horizontal_event Event[] @relation("HorizontalEventFile")
+  stories Story[]
 
   @@map("file")
 }
@@ -59,6 +62,33 @@ model Event {
   horizontal_file  File  @relation("HorizontalEventFile", fields: [horizontal_file_id], references: [id])
 
   @@map("event")
+}
+
+model Story {
+  id  String  @id @default(uuid())
+  created_at  DateTime  @default(now())
+
+  user_id String
+  user  User  @relation(fields: [user_id], references: [id])
+  
+  file_id String
+  file  File  @relation(fields: [file_id], references: [id])
+
+  story_viewed  StoryViewed[] @relation()
+
+  @@map("story")
+}
+
+model StoryViewed {
+  user_id String
+  user  User  @relation(fields: [user_id], references: [id])
+
+  story_id String
+  story  Story  @relation(fields: [story_id], references: [id])
+
+  @@id([user_id, story_id])
+
+  @@map("story_viewed")
 }
 
 enum Provider {
