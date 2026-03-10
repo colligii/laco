@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Clock, MessageCircle } from "lucide-react";
+import { ArrowLeft, Clock, MessageCircle, RefreshCw } from "lucide-react";
 import TheirStoriesVirtualList from "./their-stories-virtual-list";
 import { EventModel, UserModel } from "@/prisma/app/generated/prisma/models";
 import { StoryResponse } from "@/app/api/story/status/route";
@@ -12,6 +12,8 @@ import Loading from "@/app/components/loading";
 import axios from "axios";
 import { useLoading } from "@/app/zustand/store";
 
+const REFRESH_PROMPT_INTERVAL_MS = 2 * 60 * 1000;
+
 export default function EventClient({ event, initialStories, me, paramsResolved, videos }: EventClientProps) {
 
     const router = useRouter();
@@ -19,6 +21,9 @@ export default function EventClient({ event, initialStories, me, paramsResolved,
     const [ myStory, setMyStory ] = useState(initialStories[0]);
     const [theirStories, setTheirStories] = useState(initialStories.slice(1))
     const { setIsLoading } = useLoading();
+    const [lastRefreshTime, setLastRefreshTime] = useState(() => Date.now());
+    const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const handleStory = (user_id: string) => {
         router.replace(`/event/${event.id}/story/details/${user_id}`);
@@ -26,6 +31,7 @@ export default function EventClient({ event, initialStories, me, paramsResolved,
 
     const updateScreen = async () => {
         setIsLoading(true);
+        setIsRefreshing(true);
 
         try {
             const storiesRequest = await axios.get(`/api/story/status?eventId=${paramsResolved.id}`)
@@ -34,14 +40,31 @@ export default function EventClient({ event, initialStories, me, paramsResolved,
             console.log('error')
         } finally {
 
+            setIsRefreshing(false);
             setIsLoading(false);
+            setLastRefreshTime(Date.now());
+            setShowRefreshPrompt(false);
         }
+    }
+
+    const handleManualRefresh = () => {
+        return updateScreen();
     }
 
     useEffect(() => {
         setMyStory(stories[0]);
         setTheirStories(stories.slice(1));
     }, [stories])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const shouldShow = Date.now() - lastRefreshTime >= REFRESH_PROMPT_INTERVAL_MS;
+                if(!showRefreshPrompt)
+            setShowRefreshPrompt(shouldShow);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [lastRefreshTime])
 
 
     return (
@@ -137,6 +160,19 @@ export default function EventClient({ event, initialStories, me, paramsResolved,
                         })}
                     </div>
                 </main>
+            </div>
+
+            <div 
+                style={{ bottom: '20px', left: '50%', transform: 'translateX(-50%)' }}
+                className={`absolute inset-x-0 z-40 flex justify-center transition-all duration-300 ${showRefreshPrompt ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
+                <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-full border border-white/30 bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/40 backdrop-blur transition duration-300 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:cursor-wait disabled:opacity-60"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                >
+                    <RefreshCw size={18} />
+                </button>
             </div>
 
         </div >
