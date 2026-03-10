@@ -38,8 +38,7 @@ export const GET = validateRequest(async ({
             u."firstName",
             u."lastName",
             f."path" as "avatar_path",
-            bool_or(sv.user_id is null) as "not_viewed",
-            array_agg(s.id order by s.created_at) as "story_ids"
+            bool_or(sv.user_id is null) as "not_viewed"
         from public.story s
         inner join public."user" u on u.id = s.user_id
         inner join public."file" f on u."avatarId" = f.id

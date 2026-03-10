@@ -19,7 +19,7 @@ export default async function StoryDetailsPage({ params }: StoryDetailsPageProps
   return (
     <StoryClient
       initialStoryIndex={actualStoryIndex}
-      stories={stories}
+      initialStories={stories}
       id={id}
     ></StoryClient>
   );

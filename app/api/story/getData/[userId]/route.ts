@@ -35,44 +35,93 @@ export const GET = validateRequest(async ({
             return NextResponse.json({ message: 'Id do evento não está definido' }, { status: 400 })
 
         let stories: UserIdStoryResponse[] = await prisma.$queryRaw`
-        select
-    u."id" as "user_id",
-    u."firstName",
-    u."lastName",
-    f."path" as "avatar_path",
+        with story_reactions_count as (
+    select
+        sr.story_id,
 
-    json_agg(
-        json_build_object(
-            'id', s.id,
-            'path', sf.path,
-            'created_at', s.created_at,
-            'type', sf.type,
-            'not_viewed', (sv.user_id is null)
-        )
-        order by s.created_at
-    ) as stories
+        COUNT(*) FILTER (WHERE sr.reaction = 'Like')  as like,
+        COUNT(*) FILTER (WHERE sr.reaction = 'Smile') as smile,
+        COUNT(*) FILTER (WHERE sr.reaction = 'Clap')  as clap,
+        COUNT(*) FILTER (WHERE sr.reaction = 'Heart') as heart,
 
-from public.story s
-inner join public."file" sf on s.file_id = sf.id
-inner join public."user" u on u.id = s.user_id and u.id = ${params.userId}
-inner join public."file" f on u."avatarId" = f.id
+        MAX(sr.reaction) FILTER (WHERE sr.user_id = ${session.user.id}) 
+            as my_reaction
 
-left join public.story_viewed sv 
-    on s.id = sv.story_id 
-    and sv.user_id = ${session.user.id}
+    from public.story_reaction sr
+    group by sr.story_id
+),
 
-where s.event_id = ${eventId}
+users_stories as (
+    select
+        u."id" as "user_id",
+        u."firstName",
+        u."lastName",
+        f."path" as "avatar_path",
 
-group by
-    u.id,
-    u."firstName",
-    u."lastName",
-    f.path
+        json_agg(
+            json_build_object(
+                'id', s.id,
+                'path', sf.path,
+                'created_at', s.created_at,
+                'type', sf.type,
+                'not_viewed', (sv.user_id is null),
+                'like', coalesce(src.like,0),
+                'smile', coalesce(src.smile,0),
+                'clap', coalesce(src.clap,0),
+                'heart', coalesce(src.heart,0),
+                'my_reaction', src.my_reaction
+            )
+            order by s.created_at
+        ) as stories,
 
-order by
-    (u.id = ${session.user.id}) desc,
-    bool_or(sv.user_id is null) desc,
-    max(s.created_at) desc;
+        bool_or(sv.user_id is null) as has_not_viewed,
+        max(s.created_at) as last_story_date
+
+    from public.story s
+
+    left join story_reactions_count src
+        on src.story_id = s.id
+
+    inner join public."file" sf on s.file_id = sf.id
+    inner join public."user" u on u.id = s.user_id
+    inner join public."file" f on u."avatarId" = f.id
+
+    left join public.story_viewed sv 
+        on s.id = sv.story_id 
+        and sv.user_id = ${session.user.id}
+
+    where s.event_id = ${eventId}
+
+    group by
+        u.id,
+        u."firstName",
+        u."lastName",
+        f.path
+),
+
+ordered as (
+    select
+        *,
+        lag(user_id) over (
+            order by
+                (user_id = ${session.user.id}) desc,
+                has_not_viewed desc,
+                last_story_date desc
+        ) as previous_user_id,
+
+        lead(user_id) over (
+            order by
+                (user_id = ${session.user.id}) desc,
+                has_not_viewed desc,
+                last_story_date desc
+        ) as next_user_id
+
+    from users_stories
+)
+
+select *
+from ordered
+where user_id = ${params.userId};
         `;
 
         const story: UserIdStoryResponse = stories[0];
@@ -104,11 +153,18 @@ export type UserIdStoryResponse = {
     avatar_path: string,
     firstName: string,
     lastName: string,
+    previous_user_id?: string,
+    next_user_id?: string,  
     stories: {
         id: string,
         path: string,
         created_at: Date,
         not_viewed: boolean,
         type: 'Video' | 'Photo'
+        like: number,
+        smile: number,
+        my_reaction?: string,
+        clap: number,
+        heart: number,
     }[]
 }

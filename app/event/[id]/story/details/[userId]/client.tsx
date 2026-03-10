@@ -1,9 +1,12 @@
 'use client'
 
 import { UserIdStoryResponse } from "@/app/api/story/getData/[userId]/route"
+import Loading from "@/app/components/loading"
+import { useLoading } from "@/app/zustand/store"
 import axios from "axios"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 const formatElapsedTime = (dateInput: string | Date) => {
@@ -26,8 +29,9 @@ const formatElapsedTime = (dateInput: string | Date) => {
     return `${seconds}s`
 }
 
-export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => {
-
+export const StoryClient = ({ initialStories, id, initialStoryIndex }: StoryClient) => {
+    
+    const [stories, setStories] = useState(initialStories);
     const [storyIndex, setStoryIndex] = useState(initialStoryIndex)
     const [progress, setProgress] = useState(0)
     const [isPaused, setIsPaused] = useState(false)
@@ -35,7 +39,9 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
     const [videoDuration, setVideoDuration] = useState<number | null>(null)
     const [showPlayButton, setShowPlayButton] = useState(false)
 
+    const router = useRouter();
     const videoRef = useRef<HTMLVideoElement | null>(null)
+    const { setIsLoading } = useLoading();
 
     const actualStory = stories.stories[storyIndex]
     const convertDate = formatElapsedTime(actualStory.created_at)
@@ -98,6 +104,12 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
                     setStoryIndex(prev => prev + 1)
                     setProgress(0)
                     setVideoDuration(null)
+                } else {
+                    setIsLoading(true);
+                    if (stories.next_user_id)
+                        window.location.href = (`/event/${id}/story/details/${stories.next_user_id}`)
+                    else
+                        window.location.href = '/event/' + id;
                 }
 
                 return
@@ -148,15 +160,50 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
     const goToPreviousStory = () => {
         if (storyIndex > 0) {
             setStoryIndex(prev => prev - 1)
+            return;
         }
+
+        if (stories.previous_user_id)
+            setIsLoading(true)
+        window.location.href = (`/event/${id}/story/details/${stories.previous_user_id}`)
     }
 
     const goToNextStory = () => {
         if (storyIndex < stories.stories.length - 1) {
             setStoryIndex(prev => prev + 1)
+        } else {
+            setIsLoading(true);
+            if (stories.next_user_id)
+                window.location.href = (`/event/${id}/story/details/${stories.next_user_id}`)
+            else
+                window.location.href = '/event/' + id;
         }
     }
 
+    const patchReaction = (reaction: string) => {
+        setIsPaused(true);
+        setIsLoading(true);
+
+        axios.patch(`/api/story/reaction/${stories.stories[storyIndex].id}`, {
+            reaction
+        })
+            .then(({ data }) => {
+                setStories((storiesProp) => {
+                    storiesProp.stories[storyIndex] = {
+                        ...storiesProp.stories[storyIndex],
+                        ...data
+                    };
+
+                    return storiesProp
+                })  
+            })
+            .catch(() => {})
+            .finally(() => {
+                setIsPaused(false);
+                setIsLoading(false);
+            })
+
+    }
 
     return (
         <div
@@ -166,6 +213,7 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
         >
+            <Loading />
 
             <div className="relative flex-1">
 
@@ -207,12 +255,13 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
 
 
                 {/* header */}
-                <div style={{ zIndex: '2000' }} className="absolute inset-x-0 z-20 w-full top-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
-
+                <div
+                    style={{ zIndex: '2000' }}
+                    className="absolute inset-x-0 top-0 z-20 w-full bg-gradient-to-b from-black/80 to-transparent px-4 pt-4 pb-3"
+                >
                     {/* progress bar */}
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-3 overflow-hidden">
                         {stories.stories.map((_, index) => {
-
                             let width = "0%"
 
                             if (index < storyIndex) width = "100%"
@@ -229,10 +278,8 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
                         })}
                     </div>
 
-
-                    <div className="flex items-center justify-between pt-4">
-
-                        <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+                        <div className="flex items-center gap-3 min-w-0">
 
                             <Link
                                 href={`/event/${id}`}
@@ -247,21 +294,58 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
                                 className="w-9 h-9 rounded-full border border-white/30"
                             />
 
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold leading-none">
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-sm font-semibold leading-none truncate">
                                     {stories.firstName} {stories.lastName}
                                 </span>
-                                <span className="text-xs text-white/70">{convertDate}</span>
+                                <span className="text-xs text-white/70">
+                                    {convertDate}
+                                </span>
                             </div>
 
                         </div>
-
                     </div>
-
                 </div>
+
 
             </div>
 
+            <div style={{ zIndex: 3000, bottom: '70px' }} className="absolute left-4 z-20 flex gap-1 rounded-full border border-white/10 bg-black/40 py-1.5 px-4 backdrop-blur-sm">
+                {/** react component */}
+                <div 
+                    onClick={() => patchReaction('Like')}
+                    className="flex justify-center h-8 rounded-full items-center gap-0.5 px-1"
+                    style={{ width: '50px', background: stories.stories[storyIndex].my_reaction === 'Like' ? 'rgba(255, 255, 255, 0.6)' : undefined }}
+                    >
+                    <span className="text-sm">👍</span>
+                    <span className="text-[10px] opacity-80">{stories.stories[storyIndex].like}</span>
+                </div>
+                <div 
+                    onClick={() => patchReaction('Smile')}
+                    className="flex justify-center h-8 rounded-full items-center gap-0.5 px-1"
+                    style={{ width: '50px', background: stories.stories[storyIndex].my_reaction === 'Smile' ? 'rgba(255, 255, 255, 0.6)' : undefined }}
+                    >
+                    <span className="text-sm">😁</span>
+                    <span className="text-[10px] opacity-80">{stories.stories[storyIndex].smile}</span>
+                </div>
+                <div 
+                    onClick={() => patchReaction('Clap')}
+                    className="flex justify-center h-8 rounded-full items-center gap-0.5 px-1"
+                    style={{ width: '50px', background: stories.stories[storyIndex].my_reaction === 'Clap' ? 'rgba(255, 255, 255, 0.6)' : undefined }}
+                    >
+                    <span className="text-sm">👏</span>
+                    <span className="text-[10px] opacity-80">{stories.stories[storyIndex].clap}</span>
+                </div>
+                <div 
+                    onClick={() => patchReaction('Heart')}
+                    className="flex justify-center h-8 rounded-full items-center gap-0.5 px-1"
+                    style={{ width: '50px', background: stories.stories[storyIndex].my_reaction === 'Heart' ? 'rgba(255, 255, 255, 0.6)' : undefined }}
+                >
+                    <span className="text-sm">❤️</span>
+                    <span className="text-[10px] opacity-80">{stories.stories[storyIndex].heart}</span>
+                </div>
+
+            </div>
 
             <button
                 type="button"
@@ -269,7 +353,7 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
                 onClick={goToPreviousStory}
                 style={{ width: '22vw', zIndex: '1000' }}
                 className="absolute left-0 top-0 h-full"
-                />
+            />
 
             <button
                 type="button"
@@ -285,5 +369,5 @@ export const StoryClient = ({ stories, id, initialStoryIndex }: StoryClient) => 
 export interface StoryClient {
     initialStoryIndex: number
     id: string
-    stories: UserIdStoryResponse
+    initialStories: UserIdStoryResponse
 }
