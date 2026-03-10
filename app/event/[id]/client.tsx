@@ -7,17 +7,46 @@ import { StoryResponse } from "@/app/api/story/status/route";
 import { UserResponse } from "@/app/api/user/me/route";
 import Link from 'next/link'
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Loading from "@/app/components/loading";
+import axios from "axios";
+import { useLoading } from "@/app/zustand/store";
 
-export default function EventClient({ event, stories, me, myStory, paramsResolved, theirStories, videos }: EventClientProps) {
+export default function EventClient({ event, initialStories, me, paramsResolved, videos }: EventClientProps) {
 
     const router = useRouter();
+    const [ stories, setStories ] = useState(initialStories);
+    const [ myStory, setMyStory ] = useState(initialStories[0]);
+    const [theirStories, setTheirStories] = useState(initialStories.slice(1))
+    const { setIsLoading } = useLoading();
 
     const handleStory = (user_id: string) => {
         router.replace(`/event/${event.id}/story/details/${user_id}`);
     }
 
+    const updateScreen = async () => {
+        setIsLoading(true);
+
+        try {
+            const storiesRequest = await axios.get(`/api/story/status?eventId=${paramsResolved.id}`)
+            setStories(storiesRequest.data);
+        } catch(e) {
+            console.log('error')
+        } finally {
+
+            setIsLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        setMyStory(stories[0]);
+        setTheirStories(stories.slice(1));
+    }, [stories])
+
+
     return (
         <div className="h-dvh bg-zinc-950 text-white flex flex-col overflow-hidden">
+            <Loading/>
             <div className="w-full max-w-md mx-auto flex flex-col flex-1 min-h-0">
                 <header className="flex items-center justify-between px-5 sm:px-6 py-4 sticky top-0 bg-zinc-950/95 backdrop-blur z-10">
                     <button className="p-2 bg-zinc-900/70 hover:bg-zinc-800 transition-colors rounded-full border border-zinc-800">
@@ -118,9 +147,7 @@ export default function EventClient({ event, stories, me, myStory, paramsResolve
 export interface EventClientProps {
     event: EventModel,
     me: UserResponse,
-    myStory: StoryResponse,
-    stories: StoryResponse[],
+    initialStories: StoryResponse[],
     paramsResolved: { id: string },
-    theirStories: StoryResponse[],
     videos: any[]
 }

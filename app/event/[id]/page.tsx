@@ -18,19 +18,14 @@ export default async function EventPage({ params }: PageProps) {
   const me = await makeBackendRequest('/api/user/me');
   const stories: StoryResponse[] = await makeBackendRequest(`/api/story/status?eventId=${paramsResolved.id}`);
 
-  const myStory = stories[0];
-  let theirStories: StoryResponse[] = stories.slice(1);
-
   const videos = Array(8).fill(null);
 
   return (
     <EventClient
-      stories={stories}
+      initialStories={stories}
       event={event}
       me={me}
-      myStory={myStory}
       paramsResolved={paramsResolved}
-      theirStories={theirStories}
       videos={videos}
     ></EventClient>
   );
