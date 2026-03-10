@@ -11,13 +11,15 @@ import { useEffect, useState } from "react";
 import Loading from "@/app/components/loading";
 import axios from "axios";
 import { useLoading } from "@/app/zustand/store";
+import { PostResponse } from "@/app/api/post/status/route";
 
 const REFRESH_PROMPT_INTERVAL_MS = 2 * 60 * 1000;
 
-export default function EventClient({ event, initialStories, me, paramsResolved, videos }: EventClientProps) {
+export default function EventClient({ event, initialStories, initialPosts, me, paramsResolved, videos }: EventClientProps) {
 
     const router = useRouter();
     const [ stories, setStories ] = useState(initialStories);
+    const [ posts, setPosts ] = useState(initialPosts);
     const [ myStory, setMyStory ] = useState(initialStories[0]);
     const [theirStories, setTheirStories] = useState(initialStories.slice(1))
     const { setIsLoading } = useLoading();
@@ -112,42 +114,37 @@ export default function EventClient({ event, initialStories, me, paramsResolved,
 
                 <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 pb-24">
                     <div className="grid grid-cols-4 auto-rows-[90px] sm:auto-rows-[100px] gap-2">
-                        {videos.map((_, index) => {
-                            const pattern = index % 6;
-                            const tileClass =
-                                pattern === 0
-                                    ? 'col-span-2 row-span-2'
-                                    : pattern === 1
-                                        ? 'col-span-2 row-span-1'
-                                        : pattern === 2
-                                            ? 'col-span-1 row-span-2'
-                                            : pattern === 3
-                                                ? 'col-span-1 row-span-1'
-                                                : pattern === 4
-                                                    ? 'col-span-1 row-span-1'
-                                                    : 'col-span-2 row-span-1';
+                        {posts.map((post, index) => {
 
                             return (
                                 <Link
                                     href={`/event/${paramsResolved.id}/story/post`}
                                     key={index}
-                                    className={`${tileClass} relative group`}
+                                    className="relative group"
                                 >
                                     <div className="w-full h-full relative overflow-hidden bg-zinc-900 rounded-xl border border-zinc-800">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c"
+                                        {post.type === 'Photo' && <img
+                                            src={post.path}
                                             className="w-full h-full object-cover opacity-80"
                                             alt="Video thumbnail"
-                                        />
+                                            />}
+
+                                        {post.type === 'Video' && <video
+                                                src={post.path}
+                                                className="w-full h-full object-cover opacity-80"
+                                            
+                                        />}
+
+                                        
 
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent flex items-end justify-between p-2">
                                             <div className="flex items-center gap-1.5 min-w-0">
                                                 <img
-                                                    src="https://github.com/shadcn.png"
+                                                    src={post.avatar_path}
                                                     className="w-5 h-5 rounded-full border border-white/80 shrink-0"
-                                                    alt="Convidado"
+                                                    alt={post.firstName+' '+post.lastName}
                                                 />
-                                                <span className="text-[10px] text-zinc-100 font-medium truncate">Convidado</span>
+                                                <span className="text-[10px] text-zinc-100 font-medium truncate">{post.firstName} {post.lastName}</span>
                                             </div>
                                             <div className="flex items-center gap-1 text-[10px] text-zinc-200 shrink-0">
                                                 <Clock size={11} />
@@ -185,5 +182,5 @@ export interface EventClientProps {
     me: UserResponse,
     initialStories: StoryResponse[],
     paramsResolved: { id: string },
-    videos: any[]
+    initialPosts: PostResponse[]
 }
