@@ -1,6 +1,6 @@
 import { prisma } from "@/app/lib/prisma";
 import { validateRequest } from "@/app/lib/validateRequest";
-import { createStory } from "@/app/schemas/create-story";
+import { createStoryAndPost } from "@/app/schemas/create-story-and-post";
 import { NextResponse } from "next/server";
 
 export const POST = validateRequest(async ({
@@ -33,7 +33,7 @@ export const POST = validateRequest(async ({
 
     return NextResponse.json(story);
 
-}, createStory, undefined, {
+}, createStoryAndPost, undefined, {
     type: 'session',
     secret: process.env.AUTH_SECRET!,
     completeTokenVar: 'token'
