@@ -39,7 +39,15 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
     const updateScreen = async () => {
         try {
             const storiesRequest = await axios.get(`/api/story/status?eventId=${paramsResolved.id}`)
+            const postRequest = await axios.get(`/api/post/status/next?eventId=${paramsResolved.id}`);
             setStories(storiesRequest.data);
+            setPosts(postRequest.data);
+
+            isFetching.current = false;
+            stopFetchBottom.current = false;
+            stopFetchBottom.current = false;
+            scrollHeightBeforeUpdate.current = 0;
+            listRef.current?.scrollTo(0, 0);
         } catch (e) {
             console.error('error refreshing stories');
         } finally {
@@ -193,12 +201,12 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                         <img
                             onClick={() => handleStory(myStory.user_id)}
                             src={me.avatar_url}
-                            style={{ borderColor: myStory?.not_viewed ? 'green' : '#6366f1' }}
+                            style={{ borderColor: myStory?.not_viewed ? 'green' : undefined }}
                             className="w-16 h-16 rounded-full object-cover border-2 p-0.5"
                             alt="Sua foto"
                         />
                         <Link href={`/event/${paramsResolved.id}/story/post`}>
-                            <div className="absolute bg-indigo-500 -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-zinc-950">
+                            <div className="absolute bg-indigo-500 bg-black -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-zinc-950">
                                 <span className="text-sm font-bold">+</span>
                             </div>
                         </Link>
@@ -229,10 +237,12 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
             </div>
 
             {/* Refresh Prompt Overlay */}
-            <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${showRefreshPrompt ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
+            <div 
+                style={{ bottom: '20px' }}
+                className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${showRefreshPrompt ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
                 <button
                     onClick={handleManualRefresh}
-                    className="flex items-center gap-2 rounded-full border border-white/30 bg-black/80 px-6 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur-md hover:bg-zinc-800 disabled:opacity-50"
+                    className="flex bg-black items-center gap-2 rounded-full border border-white/30 bg-black/80 px-6 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur-md hover:bg-zinc-800 disabled:opacity-50"
                 >
                     <RefreshCw size={18} />
                     Novas atualizações
