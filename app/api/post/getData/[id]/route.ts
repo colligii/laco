@@ -34,7 +34,7 @@ export const GET = validateRequest(async ({
         if (!idIsUUID.safeParse({ id: eventId }).success)
             return NextResponse.json({ message: 'Id do evento não está definido' }, { status: 400 })
 
-        let posts: PostIdResponse[] = await prisma.$queryRaw`
+        let posts: SqlResponse[] = await prisma.$queryRaw`
             with post_reaction_count as (
                 select
                     pr.post_id,
@@ -78,7 +78,10 @@ export const GET = validateRequest(async ({
                     p.id, p.created_at, u."firstName", u."lastName", f2.path, f.path, f.type;
         `;
 
-        const post: PostIdResponse = posts[0];
+        const post: PostIdResponse = {
+            ...posts[0],
+            post_reaction: posts[0].post_reaction[0]
+        };
         
         post.avatar_path = await cloudfrontGetSignedUrl(post.avatar_path, 60 * 60)
         post.post_path = await cloudfrontGetSignedUrl(post.post_path, 60 * 60)
@@ -96,6 +99,24 @@ export const GET = validateRequest(async ({
     }
 )
 
+export type PostReaction = {
+    like: number,
+    smile: number,
+    clap: number,
+    heart: number,
+    my_reaction?: string | null,
+}
+
+export type SqlResponse = {
+    id: string,
+    created_at: string,
+    firstName: string,
+    lastName: string,
+    type: string,
+    avatar_path: string,
+    post_path: string,  
+    post_reaction: PostReaction[],
+}
 
 export type PostIdResponse = {
     id: string,
@@ -105,11 +126,5 @@ export type PostIdResponse = {
     type: string,
     avatar_path: string,
     post_path: string,  
-    post_reaction: {
-        like: number,
-        smile: number,
-        clap: number,
-        heart: number,
-        my_reaction?: string,
-    }[]
+    post_reaction: PostReaction,
 }

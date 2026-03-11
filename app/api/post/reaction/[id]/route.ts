@@ -2,18 +2,19 @@ import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { prisma } from "@/app/lib/prisma";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
-import { reactionInStory, reactionInStoryType } from "@/app/schemas/reaction-in-story";
-import { StoryReactionModel } from "@/prisma/app/generated/prisma/models";
+import { reaction, reactionType } from "@/app/schemas/reaction";
+import { PostReactionModel } from "@/prisma/app/generated/prisma/models";
 import { NextRequest, NextResponse } from "next/server";
 import { URL } from "url";
+import { PostReaction } from "../../getData/[id]/route";
 
-export async function toggleReaction(storyReaction: StoryReactionModel, body: reactionInStoryType) {
-    if(storyReaction.reaction === body.reaction) {
-        await prisma.storyReaction.delete({
+export async function toggleReaction(postReaction: PostReactionModel, body: reactionType) {
+    if(postReaction.reaction === body.reaction) {
+        await prisma.postReaction.delete({
             where: {
-                story_id_user_id: {
-                    story_id: storyReaction.story_id,
-                    user_id: storyReaction.user_id
+                post_id_user_id: {
+                    post_id: postReaction.post_id,
+                    user_id: postReaction.user_id
                 }
             }
         });
@@ -21,11 +22,11 @@ export async function toggleReaction(storyReaction: StoryReactionModel, body: re
         return { deleted: true }
     }
 
-    await prisma.storyReaction.update({
+    await prisma.postReaction.update({
         where: {
-            story_id_user_id: {
-                story_id: storyReaction.story_id,
-                user_id: storyReaction.user_id
+            post_id_user_id: {
+                post_id: postReaction.post_id,
+                user_id: postReaction.user_id
             },
         },
         data: {
@@ -59,31 +60,31 @@ export const PATCH = validateRequest(async ({
         if (!session || !session.user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
-        const story = await prisma.story.findUnique({
+        const post = await prisma.post.findUnique({
             where: {
                 id: params.id
             }
         });
 
-        if(!story)
-            return NextResponse.json({ message: 'Story não existe' }, { status: 400 })
+        if(!post)
+            return NextResponse.json({ message: 'Post não existe' }, { status: 400 })
 
-        const findedStoryReaction = await prisma.storyReaction.findUnique({
+        const findedPostReaction = await prisma.postReaction.findUnique({
             where: {
-                story_id_user_id: {
-                    story_id: params.id,
+                post_id_user_id: {
+                    post_id: params.id,
                     user_id: session.user.id
                 }
             }
         })
 
-        if(findedStoryReaction) 
-            await toggleReaction(findedStoryReaction, body)
+        if(findedPostReaction) 
+            await toggleReaction(findedPostReaction, body)
         else {
             try {
-                await prisma.storyReaction.create({
+                await prisma.postReaction.create({
                     data: {
-                        story_id: params.id,
+                        post_id: params.id,
                         user_id: session.user.id,
                         reaction: body.reaction    
                     },
@@ -91,36 +92,36 @@ export const PATCH = validateRequest(async ({
     
             } catch(e: any) {
                 if(e.code === 'P2002') {
-                    const reaction = await prisma.storyReaction.findUnique({
+                    const post = await prisma.postReaction.findUnique({
                         where: {
-                            story_id_user_id: {
-                                story_id: params.id,
+                            post_id_user_id: {
+                                post_id: params.id,
                                 user_id: session.user.id
                             }
                         }
                     })
 
-                    if(reaction)
-                        await toggleReaction(reaction, body);
+                    if(post)
+                        await toggleReaction(post, body);
                 }
             }
         }
 
-        const query: StoryResponse[] = await prisma.$queryRaw`
+        const query: PostReaction[] = await prisma.$queryRaw`
             select
-                sr.story_id,
+                pr.post_id,
 
-                COUNT(*) FILTER (WHERE sr.reaction = 'Like')::int  as like,
-                COUNT(*) FILTER (WHERE sr.reaction = 'Smile')::int as smile,
-                COUNT(*) FILTER (WHERE sr.reaction = 'Clap')::int  as clap,
-                COUNT(*) FILTER (WHERE sr.reaction = 'Heart')::int as heart,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Like')::int  as like,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Smile')::int as smile,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Clap')::int  as clap,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Heart')::int as heart,
 
-                MAX(sr.reaction) FILTER (WHERE sr.user_id = ${session.user.id}) 
+                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${session.user.id}) 
                     as my_reaction
 
-            from public.story_reaction sr
-                where sr.story_id = ${params.id}
-            group by sr.story_id
+            from public.post_reaction pr
+                where pr.post_id = ${params.id}
+            group by pr.post_id
         `;
 
         let result = query[0];
@@ -141,7 +142,7 @@ export const PATCH = validateRequest(async ({
         console.log(e)
         return NextResponse.json({ message: 'Error' })
     }
-}, reactionInStory, idIsUUID,
+}, reaction, idIsUUID,
     {
         type: 'session',
         secret: process.env.AUTH_SECRET!,
@@ -149,7 +150,74 @@ export const PATCH = validateRequest(async ({
     }
 )
 
-export type StoryResponse = {
+
+
+export const GET = validateRequest(async ({
+    params,
+    body,
+    payloadSession
+}) => {
+    try {
+
+        if (!payloadSession?.id)
+            return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
+
+        const session = await prisma.session.findUnique({
+            where: {
+                id: payloadSession?.id
+            },
+            include: {
+                user: true
+            }
+        })
+
+        if (!session || !session.user)
+            return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
+
+        const query: PostReaction[] = await prisma.$queryRaw`
+            select
+                pr.post_id,
+
+                COUNT(*) FILTER (WHERE pr.reaction = 'Like')::int  as like,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Smile')::int as smile,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Clap')::int  as clap,
+                COUNT(*) FILTER (WHERE pr.reaction = 'Heart')::int as heart,
+
+                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${session.user.id}) 
+                    as my_reaction
+
+            from public.post_reaction pr
+                where pr.post_id = ${params.id}
+            group by pr.post_id
+        `;
+
+        let result = query[0];
+
+        if(!result) {
+            result = {
+                like: 0,
+                smile: 0,
+                clap: 0,
+                heart: 0,
+                my_reaction: null
+            }
+        }
+
+        return NextResponse.json(result)
+    } catch (e) {
+        console.log(e)
+        return NextResponse.json({ message: 'Error' })
+    }
+}, undefined, idIsUUID,
+    {
+        type: 'session',
+        secret: process.env.AUTH_SECRET!,
+        completeTokenVar: 'token'
+    }
+)
+
+
+export type PostResponse = {
     like: number,
     smile: number,
     clap: number,

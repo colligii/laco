@@ -1,4 +1,5 @@
 import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
+import { createComment } from "@/app/lib/create-comment";
 import { prisma } from "@/app/lib/prisma";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { getStoryByUserId } from "@/app/schemas/getStoryByUserId";
@@ -52,6 +53,52 @@ export const GET = validateRequest(async ({
         return NextResponse.json({ message: 'Error' })
     }
 }, undefined, idIsUUID,
+    {
+        type: 'session',
+        secret: process.env.AUTH_SECRET!,
+        completeTokenVar: 'token'
+    }
+)
+
+
+export const POST = validateRequest(async ({
+    request,
+    payloadSession,
+    params,
+    body
+}) => {
+    try {
+        const url = new URL(request.url);
+        const eventId = url.searchParams.get('eventId');
+
+        if (!payloadSession?.id)
+            return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
+
+        const session = await prisma.session.findUnique({
+            where: {
+                id: payloadSession?.id
+            },
+            include: {
+                user: true
+            }
+        })
+
+        if (!session || !session.user)
+            return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
+
+        const comment = await prisma.postComments.create({
+            data: {
+                comment: body.comment,
+                post_id: params.id,
+                user_id: session.user.id
+            }
+        })
+        return NextResponse.json(comment)
+    } catch (e) {
+        console.log(e)
+        return NextResponse.json({ message: 'Error' })
+    }
+}, createComment, idIsUUID,
     {
         type: 'session',
         secret: process.env.AUTH_SECRET!,

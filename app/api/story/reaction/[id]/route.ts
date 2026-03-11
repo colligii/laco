@@ -2,12 +2,12 @@ import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { prisma } from "@/app/lib/prisma";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
-import { reactionInStory, reactionInStoryType } from "@/app/schemas/reaction-in-story";
+import { reaction, reactionType } from "@/app/schemas/reaction";
 import { StoryReactionModel } from "@/prisma/app/generated/prisma/models";
 import { NextRequest, NextResponse } from "next/server";
 import { URL } from "url";
 
-export async function toggleReaction(storyReaction: StoryReactionModel, body: reactionInStoryType) {
+export async function toggleReaction(storyReaction: StoryReactionModel, body: reactionType) {
     if(storyReaction.reaction === body.reaction) {
         await prisma.storyReaction.delete({
             where: {
@@ -141,7 +141,7 @@ export const PATCH = validateRequest(async ({
         console.log(e)
         return NextResponse.json({ message: 'Error' })
     }
-}, reactionInStory, idIsUUID,
+}, reaction, idIsUUID,
     {
         type: 'session',
         secret: process.env.AUTH_SECRET!,
