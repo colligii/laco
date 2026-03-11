@@ -4,6 +4,7 @@ import { loginUser } from "@/app/schemas/login-user";
 import { NextResponse } from "next/server";
 import * as bcrypt from 'bcrypt';
 import * as jose from 'jose';
+import { createSession } from "@/app/lib/redis";
 
 export const POST = validateRequest(async ({ body }) => {
     try {
@@ -25,15 +26,8 @@ export const POST = validateRequest(async ({ body }) => {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        const session = await prisma.session.create({
-            data: {
-                userId: findedUser.id,
-                expires_at: expiresAt
-            }
-        })
-
         const newPayload = {
-            id: session.id
+            id: await createSession(findedUser)
         };
 
         const newSecret = new TextEncoder().encode(process.env.AUTH_SECRET!)
@@ -58,6 +52,7 @@ export const POST = validateRequest(async ({ body }) => {
 
         return response;
     } catch(e) {
+        console.log(e)
         return NextResponse.json({ message: 'Erro ao tentar fazer login' })
     }
 }, loginUser)

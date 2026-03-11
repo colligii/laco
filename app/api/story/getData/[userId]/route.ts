@@ -1,5 +1,6 @@
 import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { getStoryByUserId } from "@/app/schemas/getStoryByUserId";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
@@ -19,16 +20,9 @@ export const GET = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession?.id);
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         if (!idIsUUID.safeParse({ id: eventId }).success)
@@ -44,7 +38,7 @@ export const GET = validateRequest(async ({
         COUNT(*) FILTER (WHERE sr.reaction = 'Clap')  as clap,
         COUNT(*) FILTER (WHERE sr.reaction = 'Heart') as heart,
 
-        MAX(sr.reaction) FILTER (WHERE sr.user_id = ${session.user.id}) 
+        MAX(sr.reaction) FILTER (WHERE sr.user_id = ${user.id}) 
             as my_reaction
 
     from public.story_reaction sr
@@ -88,7 +82,7 @@ users_stories as (
 
     left join public.story_viewed sv 
         on s.id = sv.story_id 
-        and sv.user_id = ${session.user.id}
+        and sv.user_id = ${user.id}
 
     where s.event_id = ${eventId}
 
@@ -104,14 +98,14 @@ ordered as (
         *,
         lag(user_id) over (
             order by
-                (user_id = ${session.user.id}) desc,
+                (user_id = ${user.id}) desc,
                 has_not_viewed desc,
                 last_story_date desc
         ) as previous_user_id,
 
         lead(user_id) over (
             order by
-                (user_id = ${session.user.id}) desc,
+                (user_id = ${user.id}) desc,
                 has_not_viewed desc,
                 last_story_date desc
         ) as next_user_id

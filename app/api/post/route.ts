@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { createStoryAndPost } from "@/app/schemas/create-story-and-post";
 import { NextResponse } from "next/server";
@@ -12,21 +13,14 @@ export const POST = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'A sessão não existe' }, { status: 404 });
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession.id)
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não existe' }, { status: 404 });
 
         const post = await prisma.post.create({
             data: {
-                user_id: session.user.id,
+                user_id: user.id,
                 event_id: body.event_id,
                 file_id: body.file_id
             }

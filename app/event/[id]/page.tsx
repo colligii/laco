@@ -23,6 +23,7 @@ export default async function EventPage({ params }: PageProps) {
     ? postsResponse
     : postsResponse?.posts ?? [];
 
+
   return (
     <EventClient
       initialStories={stories}

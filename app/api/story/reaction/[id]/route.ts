@@ -1,5 +1,6 @@
 import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
 import { reaction, reactionType } from "@/app/schemas/reaction";
@@ -47,16 +48,9 @@ export const PATCH = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession?.id);
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         const story = await prisma.story.findUnique({
@@ -72,7 +66,7 @@ export const PATCH = validateRequest(async ({
             where: {
                 story_id_user_id: {
                     story_id: params.id,
-                    user_id: session.user.id
+                    user_id: user.id
                 }
             }
         })
@@ -84,7 +78,7 @@ export const PATCH = validateRequest(async ({
                 await prisma.storyReaction.create({
                     data: {
                         story_id: params.id,
-                        user_id: session.user.id,
+                        user_id: user.id,
                         reaction: body.reaction    
                     },
                 });
@@ -95,7 +89,7 @@ export const PATCH = validateRequest(async ({
                         where: {
                             story_id_user_id: {
                                 story_id: params.id,
-                                user_id: session.user.id
+                                user_id: user.id
                             }
                         }
                     })
@@ -115,7 +109,7 @@ export const PATCH = validateRequest(async ({
                 COUNT(*) FILTER (WHERE sr.reaction = 'Clap')::int  as clap,
                 COUNT(*) FILTER (WHERE sr.reaction = 'Heart')::int as heart,
 
-                MAX(sr.reaction) FILTER (WHERE sr.user_id = ${session.user.id}) 
+                MAX(sr.reaction) FILTER (WHERE sr.user_id = ${user.id}) 
                     as my_reaction
 
             from public.story_reaction sr

@@ -7,6 +7,7 @@ import { PostReactionModel } from "@/prisma/app/generated/prisma/models";
 import { NextRequest, NextResponse } from "next/server";
 import { URL } from "url";
 import { PostReaction } from "../../getData/[id]/route";
+import { getSession } from "@/app/lib/redis";
 
 export async function toggleReaction(postReaction: PostReactionModel, body: reactionType) {
     if(postReaction.reaction === body.reaction) {
@@ -48,16 +49,9 @@ export const PATCH = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession.id)
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         const post = await prisma.post.findUnique({
@@ -73,7 +67,7 @@ export const PATCH = validateRequest(async ({
             where: {
                 post_id_user_id: {
                     post_id: params.id,
-                    user_id: session.user.id
+                    user_id: user.id
                 }
             }
         })
@@ -85,7 +79,7 @@ export const PATCH = validateRequest(async ({
                 await prisma.postReaction.create({
                     data: {
                         post_id: params.id,
-                        user_id: session.user.id,
+                        user_id: user.id,
                         reaction: body.reaction    
                     },
                 });
@@ -96,7 +90,7 @@ export const PATCH = validateRequest(async ({
                         where: {
                             post_id_user_id: {
                                 post_id: params.id,
-                                user_id: session.user.id
+                                user_id: user.id
                             }
                         }
                     })
@@ -116,7 +110,7 @@ export const PATCH = validateRequest(async ({
                 COUNT(*) FILTER (WHERE pr.reaction = 'Clap')::int  as clap,
                 COUNT(*) FILTER (WHERE pr.reaction = 'Heart')::int as heart,
 
-                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${session.user.id}) 
+                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${user.id}) 
                     as my_reaction
 
             from public.post_reaction pr
@@ -162,16 +156,9 @@ export const GET = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession?.id)
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         const query: PostReaction[] = await prisma.$queryRaw`
@@ -183,7 +170,7 @@ export const GET = validateRequest(async ({
                 COUNT(*) FILTER (WHERE pr.reaction = 'Clap')::int  as clap,
                 COUNT(*) FILTER (WHERE pr.reaction = 'Heart')::int as heart,
 
-                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${session.user.id}) 
+                MAX(pr.reaction) FILTER (WHERE pr.user_id = ${user.id}) 
                     as my_reaction
 
             from public.post_reaction pr

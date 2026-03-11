@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as jose from 'jose';
 import { prisma } from "./prisma";
 import { Session, User } from "@/prisma/app/generated/prisma/client";
+import { getSession } from "./redis";
 
 function getZodErrors(error: z.ZodError): string[] {
     return error.issues.map((issue) => issue.message);
@@ -85,23 +86,24 @@ export function validateRequest<
 
                     authPayloadUser = user;
                 } else {
-                    const session = await prisma.session.findFirst({
-                        where: {
-                            id: payload.id,
-                            expires_at: { gt: new Date() }
-                        },
-                        include: {
-                            user: true
-                        }
-                    })
+                    if(typeof payload.id != 'string')
+                            return NextResponse.json(
+                                { message: 'Sessão não encontrada' },
+                                { status: 400 }
+                            )
+    
+                        
+                    const user = await getSession(payload.id);
 
-                    if (!session)
+                    if (!user)
                         return NextResponse.json(
                             { message: 'Sessão não encontrada' },
                             { status: 400 }
                         )
 
-                    authPayloadSession = session;
+                    authPayloadSession = {
+                        id: payload.id
+                    };
                 }
             }
 
@@ -131,6 +133,6 @@ type RequestFn<TBody, TParams> = (props: {
     body: TBody extends z.ZodNever ? undefined : z.infer<TBody>;
     request: NextRequest;
     params: TParams extends z.ZodNever ? undefined : z.infer<TParams>;
-    payloadSession?: Session,
+    payloadSession?: { id: string },
     payloadUser?: User
 }) => NextResponse | Promise<NextResponse>

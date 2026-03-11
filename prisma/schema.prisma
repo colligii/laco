@@ -23,7 +23,6 @@ model User {
   provider     Provider      @default(Local)
   avatarId     String?       @unique
   avatar       File?         @relation(fields: [avatarId], references: [id])
-  session      Session[]
   stories      Story[]
   story_viewed StoryViewed[] @relation()
 
@@ -46,15 +45,6 @@ model File {
 
   @@map("file")
   posts Post[]
-}
-
-model Session {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  expires_at DateTime
-
-  @@map("session")
 }
 
 model Event {

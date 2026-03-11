@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as jose from 'jose';
 import { includes } from "zod";
 import { prisma } from "@/app/lib/prisma";
+import { createSession } from "@/app/lib/redis";
 
 
 export async function GET(request: NextRequest) {
@@ -94,18 +95,8 @@ export async function GET(request: NextRequest) {
             return response;
         }
 
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-
-        const session = await prisma.session.create({
-            data: {
-                userId: user.id,
-                expires_at: expiresAt
-            }
-        })
-
         const payload = {
-            id: session.id
+            id: await createSession(user)
         };
 
         const secret = new TextEncoder().encode(process.env.AUTH_SECRET!)

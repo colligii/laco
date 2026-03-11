@@ -1,5 +1,6 @@
 import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { getStoryByUserId } from "@/app/schemas/getStoryByUserId";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
@@ -19,16 +20,9 @@ export const GET = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession?.id)
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         if (!idIsUUID.safeParse({ id: eventId }).success)
@@ -43,7 +37,7 @@ export const GET = validateRequest(async ({
                     COUNT(*) FILTER (WHERE pr.reaction = 'Clap')  as clap,
                     COUNT(*) FILTER (WHERE pr.reaction = 'Heart') as heart,
 
-                    MAX(pr.reaction) FILTER (WHERE pr.user_id = ${session.user.id})
+                    MAX(pr.reaction) FILTER (WHERE pr.user_id = ${user.id})
                         as my_reaction
 
                 from public.post_reaction pr

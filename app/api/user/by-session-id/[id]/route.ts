@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,23 +15,15 @@ export const GET = validateRequest(
             );
           }
       
-          const session = await prisma.session.findFirst({
-            where: {
-                id: params.id,
-                expires_at: { gt: new Date() }
-            },
-            include: {
-                user: true
-            }
-        })
-      
-          if(!session)
+          const user = await getSession(params.id);
+
+          if(!user)
               return NextResponse.json(
                   { message: 'Session not founded' },
                   { status: 400 }
               )
       
-          return NextResponse.json(session.user);
+          return NextResponse.json(user);
     } catch(e) {
         return NextResponse.json({ message: 'Error' }, { status: 500 })
     }

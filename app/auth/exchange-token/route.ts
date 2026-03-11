@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from 'jose';
 import { prisma } from "@/app/lib/prisma";
+import { createSession, redisClient } from "@/app/lib/redis";
+import { randomUUID } from "crypto";
 
 
 export async function GET(request: NextRequest) {
@@ -29,15 +31,8 @@ export async function GET(request: NextRequest) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        const session = await prisma.session.create({
-            data: {
-                userId: user.id,
-                expires_at: expiresAt
-            }
-        })
-
         const newPayload = {
-            id: session.id
+            id: await createSession(user)
         };
 
         const newSecret = new TextEncoder().encode(process.env.AUTH_SECRET!)

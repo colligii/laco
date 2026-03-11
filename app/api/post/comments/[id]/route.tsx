@@ -1,6 +1,7 @@
 import { cloudfrontGetSignedUrl } from "@/app/lib/cloudFrontgetSignedUrl";
 import { createComment } from "@/app/lib/create-comment";
 import { prisma } from "@/app/lib/prisma";
+import { getSession } from "@/app/lib/redis";
 import { validateRequest } from "@/app/lib/validateRequest";
 import { getStoryByUserId } from "@/app/schemas/getStoryByUserId";
 import { idIsUUID } from "@/app/schemas/idIsUUID";
@@ -74,23 +75,16 @@ export const POST = validateRequest(async ({
         if (!payloadSession?.id)
             return NextResponse.json({ message: 'O id da sessão não está definido' }, { status: 400 })
 
-        const session = await prisma.session.findUnique({
-            where: {
-                id: payloadSession?.id
-            },
-            include: {
-                user: true
-            }
-        })
+        const user = await getSession(payloadSession?.id)
 
-        if (!session || !session.user)
+        if (!user)
             return NextResponse.json({ message: 'A sessão não está definida' }, { status: 400 })
 
         const comment = await prisma.postComments.create({
             data: {
                 comment: body.comment,
                 post_id: params.id,
-                user_id: session.user.id
+                user_id: user.id
             }
         })
         return NextResponse.json(comment)
