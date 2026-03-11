@@ -18,14 +18,15 @@ export default async function EventPage({ params }: PageProps) {
   const event = await makeBackendRequest(`/api/event/${paramsResolved.id}`);
   const me = await makeBackendRequest('/api/user/me');
   const stories: StoryResponse[] = await makeBackendRequest(`/api/story/status?eventId=${paramsResolved.id}`);
+  const session: { id: string } = await makeBackendRequest(`/api/session/get-session`);
   const postsResponse = await makeBackendRequest(`/api/post/status/next?eventId=${paramsResolved.id}`);
   const posts: SqlResponse[] = Array.isArray(postsResponse)
     ? postsResponse
     : postsResponse?.posts ?? [];
 
-
   return (
     <EventClient
+      sessionId={session.id}
       initialStories={stories}
       event={event}
       me={me}

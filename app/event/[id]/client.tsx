@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { UIEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { SqlResponse } from "@/app/api/post/status/next/route";
+import { useWebSocket } from "@/app/lib/use-websocket";
+import ButtonComponent from "@/app/chat/button/component";
 
 const REFRESH_PROMPT_INTERVAL_MS = 2 * 60 * 1000;
 const SCROLL_THRESHOLD = 300; // Aumentado para carregar antes de chegar no fim
@@ -46,7 +48,7 @@ function getTheirStories(initialStories: StoryResponse[], me: UserResponse): Sto
 }
 
 
-export default function EventClient({ event, initialStories, initialPosts, me, paramsResolved }: EventClientProps) {
+export default function EventClient({ event, initialStories, initialPosts, me, paramsResolved, sessionId }: EventClientProps) {
     const router = useRouter();
     const [stories, setStories] = useState(initialStories);
     const [myStory, setMyStory] = useState(getMyStory(initialStories, me));
@@ -56,12 +58,21 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
     const isFetching = useRef(false);
     const stopFetchBottom = useRef(false);
     const stopFetchTop = useRef(true);
+    const { ws, registerMessage } = useWebSocket(sessionId);
 
     const [posts, setPosts] = useState(initialPosts);
     const scrollHeightBeforeUpdate = useRef<number>(0); // Add this
     const listRef = useRef<HTMLDivElement | null>(null);
 
+    const chatButtonRef = useRef<((event: any) => void) | null>(null);
+
     const MIN_ROW_HEIGHT = 220;
+
+    useEffect(() => {
+        registerMessage((event) => {
+            chatButtonRef.current?.(event);    
+        })
+    }, [])
 
     const handleStory = (user_id: string, storyIds: string[]) => {
         if(!Array.isArray(storyIds))
@@ -234,9 +245,10 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                     <h1 className="text-lg font-semibold tracking-tight text-white text-center truncate px-3">
                         {event.name}
                     </h1>
-                    <button className="p-2 bg-zinc-900/70 hover:bg-zinc-800 transition-colors rounded-full border border-zinc-800">
-                        <MessageCircle size={20} />
-                    </button>
+                    <ButtonComponent
+                        eventId={event.id}
+                        chatButtonRef={chatButtonRef}
+                    />
                 </header>
 
                 <div className="flex gap-4 px-5 py-4 items-start">
@@ -357,6 +369,7 @@ const PostCard = ({ post, paramsResolved }: PostCardProps) => (
 
 export interface EventClientProps {
     event: EventModel,
+    sessionId: string,
     me: UserResponse,
     initialStories: StoryResponse[],
     paramsResolved: { id: string },
