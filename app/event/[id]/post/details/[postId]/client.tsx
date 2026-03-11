@@ -77,7 +77,7 @@ const EventDetail = ({ event, post, initialComments }: EventDetailProps) => {
       } catch(e) {
         setComments(JSON.parse(JSON.stringify(comments)))
       }
-    }, 3000)
+    }, 1000 * 30)
 
     return () => {
       if(timeoutRef.current)
