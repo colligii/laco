@@ -204,8 +204,8 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                 const oldPostArray = posts.slice(0, 20);
 
                 const uniquePosts = new Map<string, SqlResponse>([
-                    ...prevPosts.map(p => [p.id, p] as const),
-                    ...postFetch.data.map((p: SqlResponse) => [p.id, p] as const)
+                    ...postFetch.data.map((p: SqlResponse) => [p.id, p] as const),
+                    ...prevPosts.map(p => [p.id, p] as const)
                 ]).values();
             
                 return Array.from(uniquePosts)

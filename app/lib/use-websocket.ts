@@ -69,6 +69,11 @@ export const useWebSocket = (sessionId: string) => {
         },
         registerMessage: (cb: (event: MessageEvent) => void) => {
             messageHandler.current = cb
+        },
+        sendMessage: (json: any) => {
+            if (ws.current && ws.current.readyState <= WebSocket.OPEN) {
+                ws.current.send(JSON.stringify(json))
+            }
         }
     }
 }
