@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Clock, MessageCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Clock, MessageCircle, PlusCircle, RefreshCw } from "lucide-react";
 import TheirStoriesVirtualList from "./their-stories-virtual-list";
 import { EventModel } from "@/prisma/app/generated/prisma/models";
 import { StoryResponse } from "@/app/api/story/status/route";
@@ -31,7 +31,7 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
     const listRef = useRef<HTMLDivElement | null>(null);
 
     const MIN_ROW_HEIGHT = 220;
-    
+
     const handleStory = (user_id: string) => {
         router.replace(`/event/${event.id}/story/details/${user_id}`);
     }
@@ -63,7 +63,7 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
             stopFetchBottom.current = false;
             stopFetchTop.current = false;
         }, 5000)
-    
+
         return () => clearInterval(interval);
     }, [])
 
@@ -77,10 +77,10 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
             const container = listRef.current;
             // Calculate how much the height increased
             const heightDifference = container.scrollHeight - scrollHeightBeforeUpdate.current;
-            
+
             // Manually "push" the scroll down by the height of the new items
             container.scrollTop = container.scrollTop + heightDifference;
-            
+
             // Reset the tracker
             scrollHeightBeforeUpdate.current = 0;
         }
@@ -107,8 +107,8 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                     createdAt: lastPost.created_at
                 }
             })
-            
-            if(!postFetch.data?.length) {
+
+            if (!postFetch.data?.length) {
                 stopFetchBottom.current = true;
                 isFetching.current = false;
 
@@ -118,11 +118,17 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
             stopFetchTop.current = false;
             setPosts((posts) => {
                 const oldPostArray = posts.slice(posts.length - 20, posts.length)
-                return [...oldPostArray, ...postFetch.data ];
+                
+                const uniquePosts = new Map<string, SqlResponse>([
+                    ...oldPostArray.map(p => [p.id, p] as const),
+                    ...postFetch.data.map((p: SqlResponse) => [p.id, p] as const)
+                ]).values();
+            
+                return Array.from(uniquePosts)
             })
             isFetching.current = false;
 
-        } catch(e) {
+        } catch (e) {
             isFetching.current = false;
         }
     }
@@ -131,12 +137,12 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
         try {
             const firstPost = posts[0];
             isFetching.current = true;
-            
+
             // 1. Capture the height BEFORE the state changes
             if (listRef.current) {
                 scrollHeightBeforeUpdate.current = listRef.current.scrollHeight;
             }
-    
+
             const postFetch = await axios.get('/api/post/status/previous', {
                 params: {
                     event: paramsResolved.id,
@@ -144,29 +150,34 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                     createdAt: firstPost.created_at
                 }
             });
-            
-            if(!postFetch.data.length) {
+
+            if (!postFetch.data.length) {
                 stopFetchTop.current = true;
                 isFetching.current = false;
                 return;
             }
-    
+
             setPosts((prevPosts) => {
                 const oldPostArray = posts.slice(0, 20);
-                
-                return [ ...postFetch.data, ...prevPosts ];
-            });
+
+                const uniquePosts = new Map<string, SqlResponse>([
+                    ...prevPosts.map(p => [p.id, p] as const),
+                    ...postFetch.data.map((p: SqlResponse) => [p.id, p] as const)
+                ]).values();
             
+                return Array.from(uniquePosts)
+            });
+
             isFetching.current = false;
 
-        } catch(e) {
+        } catch (e) {
             isFetching.current = false;
         }
     }
 
-    
 
-    
+
+
     const handleScroll = (e: UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
 
@@ -226,6 +237,15 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="sm:col-span-2 bg-zinc-900/70 border border-zinc-800 rounded-xl p-3 text-sm text-center text-zinc-100">
+                                <Link
+                                    href={`/event/${paramsResolved.id}/post/post`}
+                                    className="flex items-center justify-center gap-2 font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                                >
+                                    <PlusCircle size={18} />
+                                    Clique aqui para criar seu post
+                                </Link>
+                            </div>
                             {posts.map((post) => (
                                 <div key={post.id} data-key={post.id} style={{ minHeight: MIN_ROW_HEIGHT }}>
                                     <PostCard post={post} paramsResolved={paramsResolved} />
@@ -237,7 +257,7 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
             </div>
 
             {/* Refresh Prompt Overlay */}
-            <div 
+            <div
                 style={{ bottom: '20px' }}
                 className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${showRefreshPrompt ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
                 <button
