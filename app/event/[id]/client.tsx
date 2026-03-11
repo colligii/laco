@@ -260,7 +260,7 @@ type PostCardProps = {
 };
 
 const PostCard = ({ post, paramsResolved }: PostCardProps) => (
-    <Link href={`/event/${paramsResolved.id}/story/post`} className="relative group">
+    <Link href={`/event/${paramsResolved.id}/post/details/${post.id}`} className="relative group">
         <div className="w-full h-full relative overflow-hidden bg-zinc-900 rounded-xl border border-zinc-800">
             <div className="w-full h-full flex items-center justify-center bg-black/40">
                 {post.type === 'Photo' && (
