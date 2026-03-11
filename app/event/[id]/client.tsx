@@ -15,11 +15,42 @@ const REFRESH_PROMPT_INTERVAL_MS = 2 * 60 * 1000;
 const SCROLL_THRESHOLD = 300; // Aumentado para carregar antes de chegar no fim
 const MAX_POSTS_IN_MEMORY = 40;
 
+
+function getMyStory(initialStories: StoryResponse[], me: UserResponse): StoryResponse {
+    const firstStory = initialStories[0];
+
+    if(firstStory?.user_id === me.id) {
+        return firstStory;
+    }
+
+    return {
+        avatar_path: me.avatar_url,
+        firstName: me.firstName ?? '',
+        lastName: me.lastName ?? '',
+        not_viewed: false,
+        story_ids: [],
+        user_id: me.id
+    }
+}
+
+
+function getTheirStories(initialStories: StoryResponse[], me: UserResponse): StoryResponse[] {
+    const firstStory = initialStories[0];
+    let startIndex = 0;
+
+    if(firstStory?.user_id === me.id) {
+        startIndex = 1;
+    }
+
+    return initialStories.slice(startIndex)
+}
+
+
 export default function EventClient({ event, initialStories, initialPosts, me, paramsResolved }: EventClientProps) {
     const router = useRouter();
     const [stories, setStories] = useState(initialStories);
-    const [myStory, setMyStory] = useState(initialStories[0]);
-    const [theirStories, setTheirStories] = useState(initialStories.slice(1))
+    const [myStory, setMyStory] = useState(getMyStory(initialStories, me));
+    const [theirStories, setTheirStories] = useState(getTheirStories(initialStories, me))
     const [lastRefreshTime, setLastRefreshTime] = useState(() => Date.now());
     const [showRefreshPrompt, setShowRefreshPrompt] = useState(false);
     const isFetching = useRef(false);
@@ -32,8 +63,9 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
 
     const MIN_ROW_HEIGHT = 220;
 
-    const handleStory = (user_id: string) => {
-        router.replace(`/event/${event.id}/story/details/${user_id}`);
+    const handleStory = (user_id: string, storyIds: string[]) => {
+        if(!Array.isArray(storyIds))
+            router.replace(`/event/${event.id}/story/details/${user_id}`);
     }
 
     const updateScreen = async () => {
@@ -68,8 +100,8 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
     }, [])
 
     useEffect(() => {
-        setMyStory(stories[0]);
-        setTheirStories(stories.slice(1));
+        setMyStory(getMyStory(stories, me));
+        setTheirStories(getTheirStories(stories, me));
     }, [stories]);
 
     useLayoutEffect(() => {
@@ -210,7 +242,7 @@ export default function EventClient({ event, initialStories, initialPosts, me, p
                 <div className="flex gap-4 px-5 py-4 items-start">
                     <div className="relative cursor-pointer w-16 shrink-0">
                         <img
-                            onClick={() => handleStory(myStory.user_id)}
+                            onClick={() => handleStory(myStory.user_id, myStory.story_ids)}
                             src={me.avatar_url}
                             style={{ borderColor: myStory?.not_viewed ? 'green' : undefined }}
                             className="w-16 h-16 rounded-full object-cover border-2 p-0.5"

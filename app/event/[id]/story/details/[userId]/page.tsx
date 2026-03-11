@@ -16,6 +16,8 @@ export default async function StoryDetailsPage({ params }: StoryDetailsPageProps
   let actualStoryIndex = stories.stories.findIndex((story) => story.not_viewed);
   actualStoryIndex = actualStoryIndex === -1 ? 0 : actualStoryIndex;
 
+  console.log(stories)
+
   return (
     <StoryClient
       initialStoryIndex={actualStoryIndex}

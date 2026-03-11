@@ -1,22 +1,17 @@
 'use client';
 
+import { StoryResponse } from '@/app/api/story/status/route';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Grid, type CellComponentProps } from 'react-window';
 
-type TheirStory = {
-  user_id: string;
-  avatar_path: string;
-  firstName: string;
-  lastName: string;
-  not_viewed: boolean;
-};
+
 
 type TheirStoriesVirtualListProps = {
-  stories: TheirStory[];
-  onClick: (user_id: string) => void
+  stories: StoryResponse[];
+  onClick: (user_id: string, storyIds: string[]) => void
 };
 
-type TheirStoryCellProps = CellComponentProps<{ stories: TheirStory[], onClick: (user_id: string) => void }>;
+type TheirStoryCellProps = CellComponentProps<{ stories: StoryResponse[], onClick: (user_id: string, storyIds: string[]) => void }>;
 
 const ITEM_WIDTH = 88;
 const ITEM_HEIGHT = 96;
@@ -27,7 +22,7 @@ const TheirStoryCell = memo(function TheirStoryCell({ columnIndex, stories, styl
   if (!story) return null;
 
   return (
-    <div onClick={() => onClick(story.user_id)} style={style} className="flex items-start justify-center">
+    <div onClick={() => onClick(story.user_id, story.story_ids)} style={style} className="flex items-start justify-center">
       <div className="flex w-[72px] flex-col items-center gap-2">
         <div className="relative">
           <img
